@@ -14,21 +14,8 @@ export const authOptions: NextAuthOptions = {
   ],
 
   callbacks: {
-    async signIn({ user }) {
-      const email = user.email ?? ""
-      const adminEmails = process.env.ADMIN_EMAILS!.split(",").map((e) => e.trim())
-
-      // Admin har doim kiradi
-      if (adminEmails.includes(email)) return true
-
-      // Developer ro'yxatda bo'lsa kiradi
-      const [dev] = await db
-        .select()
-        .from(developers)
-        .where(eq(developers.email, email))
-        .limit(1)
-
-      return !!dev
+    async signIn() {
+      return true
     },
 
     async jwt({ token, user }) {
@@ -40,17 +27,26 @@ export const authOptions: NextAuthOptions = {
       if (adminEmails.includes(email)) {
         token.role = "admin"
         token.devId = null
-      } else {
-        const [dev] = await db
-          .select()
-          .from(developers)
-          .where(eq(developers.email, email))
-          .limit(1)
-
-        token.role = "developer"
-        token.devId = dev?.id ?? null
+        return token
       }
 
+      // Find or auto-create developer record on first login
+      let [dev] = await db
+        .select()
+        .from(developers)
+        .where(eq(developers.email, email))
+        .limit(1)
+
+      if (!dev) {
+        const [created] = await db
+          .insert(developers)
+          .values({ name: user.name ?? email.split("@")[0], email, status: "active" })
+          .returning()
+        dev = created
+      }
+
+      token.role = "developer"
+      token.devId = dev?.id ?? null
       return token
     },
 
