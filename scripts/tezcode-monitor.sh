@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-SERVER="${TEZCODE_SERVER:-https://token-nazorat.up.railway.app}"
+SERVER="${TEZCODE_SERVER:-https://tezcode-team-monitoring-production.up.railway.app}"
 TOKEN="${TEZCODE_TOKEN:-}"
 WORK_DIR="${TEZCODE_WORK_DIR:-$HOME}"  # Root dir to scan for git repos
 
