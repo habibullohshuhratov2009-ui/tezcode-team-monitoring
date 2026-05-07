@@ -1,0 +1,50 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - heading "Tezcode Monitor" [level=1] [ref=e4]
+      - generic [ref=e6]: Polat
+    - main [ref=e7]:
+      - generic [ref=e8]:
+        - paragraph [ref=e9]: Salom, Polat
+        - paragraph [ref=e10]: 💚 Aktiv — 8 daq oldin
+      - generic [ref=e11]:
+        - generic [ref=e12]:
+          - paragraph [ref=e13]: Claude token
+          - paragraph [ref=e14]: 73%
+          - paragraph [ref=e15]: 365K / 500K
+        - generic [ref=e18]:
+          - paragraph [ref=e19]: Bugun ishlagan
+          - paragraph [ref=e20]: 5.2h
+          - paragraph [ref=e21]: 312 daqiqa
+      - generic [ref=e22]:
+        - paragraph [ref=e23]:
+          - text: So'nggi commitlar (24 soat)
+          - generic [ref=e24]: 3 ta
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - generic [ref=e27]: a1b2c3d
+            - generic [ref=e28]:
+              - paragraph [ref=e29]: Fix auth middleware redirect loop
+              - paragraph [ref=e30]:
+                - text: tezcode-app
+                - generic [ref=e31]: · main
+            - generic [ref=e32]: 25 daq oldin
+          - generic [ref=e33]:
+            - generic [ref=e34]: e4f5g6h
+            - generic [ref=e35]:
+              - paragraph [ref=e36]: Add Claude token tracking to heartbeat
+              - paragraph [ref=e37]:
+                - text: tezcode-app
+                - generic [ref=e38]: · feature/monitor
+            - generic [ref=e39]: 2 soat oldin
+          - generic [ref=e40]:
+            - generic [ref=e41]: i7j8k9l
+            - generic [ref=e42]:
+              - paragraph [ref=e43]: Update dashboard UI with commit list
+              - paragraph [ref=e44]:
+                - text: tezcode-app
+                - generic [ref=e45]: · feature/monitor
+            - generic [ref=e46]: 3 soat oldin
+  - button "Open Next.js Dev Tools" [ref=e52] [cursor=pointer]:
+    - img [ref=e53]
+  - alert [ref=e56]

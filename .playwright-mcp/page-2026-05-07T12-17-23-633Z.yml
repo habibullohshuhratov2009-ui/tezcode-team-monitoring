@@ -1,0 +1,13 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "← Dashboard" [ref=e5] [cursor=pointer]:
+          - /url: /dashboard
+        - heading "Developers boshqaruvi" [level=1] [ref=e6]
+      - button "+ Dasturchi qo'shish" [ref=e7]
+    - main [ref=e8]:
+      - generic [ref=e9]: Yuklanmoqda...
+  - button "Open Next.js Dev Tools" [ref=e15] [cursor=pointer]:
+    - img [ref=e16]
+  - alert [ref=e19]

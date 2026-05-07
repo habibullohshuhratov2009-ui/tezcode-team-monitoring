@@ -1,0 +1,12 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - heading "Tezcode Monitor" [level=1] [ref=e5]
+      - paragraph [ref=e6]: Claude token nazorat tizimi
+    - button "Google bilan kirish" [ref=e7]:
+      - img [ref=e8]
+      - text: Google bilan kirish
+    - paragraph [ref=e13]: Faqat Tezcode dasturcilari kira oladi
+  - button "Open Next.js Dev Tools" [ref=e19] [cursor=pointer]:
+    - img [ref=e20]
+  - alert [ref=e23]

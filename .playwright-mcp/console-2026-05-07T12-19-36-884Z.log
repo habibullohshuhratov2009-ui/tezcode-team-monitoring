@@ -1,0 +1,28 @@
+[     112ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[     122ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[   17509ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[   17937ms] [LOG] [Fast Refresh] done in 416ms @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[   23161ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[   23222ms] [LOG] [Fast Refresh] done in 57ms @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[   23361ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[   23376ms] [LOG] [Fast Refresh] done in 118ms @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[   49958ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[   50172ms] [LOG] [Fast Refresh] done in 316ms @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[  560063ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[  560184ms] [LOG] [Fast Refresh] done in 23ms @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[  599530ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[  599923ms] [LOG] [Fast Refresh] done in 20ms @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[  600024ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[  600397ms] [LOG] [Fast Refresh] done in 474ms @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[  600499ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[  600608ms] [LOG] [Fast Refresh] done in 211ms @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[  600727ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[  600864ms] [LOG] [Fast Refresh] done in 239ms @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[  617126ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[  617183ms] [LOG] [Fast Refresh] done in 44ms @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[  728302ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[  728331ms] [LOG] [Fast Refresh] done in 50ms @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[  771336ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[  771458ms] [LOG] [Fast Refresh] done in 60ms @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[  771562ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
+[  771697ms] [LOG] [Fast Refresh] done in 235ms @ http://localhost:3000/_next/static/chunks/0.a5_next_dist_0~acfrx._.js:2477
