@@ -15,7 +15,10 @@ async function sendSummary() {
       .from(developers)
       .where(eq(developers.status, "active"))
 
-    if (devList.length === 0) return
+    if (devList.length === 0) {
+      await sendTelegram("👋 Salom! Tezcode Monitor ishlamoqda.\n\nHali hech qanday dasturchi qo'shilmagan.")
+      return
+    }
 
     const now = Date.now()
     const since24h = new Date(now - 24 * 60 * 60 * 1000)
