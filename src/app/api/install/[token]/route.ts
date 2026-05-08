@@ -57,15 +57,15 @@ Write-Host "[tezcode] O'rnatish tugadi!"
   }
 
   const bash = `#!/bin/bash
-# v2 - no interactive prompt
-echo "[tezcode] O'rnatish boshlanmoqda..."
+set -e
+echo "[tezcode] v3 - O'rnatish boshlanmoqda..."
 echo "${token}" > ~/.tezcode_token
 chmod 600 ~/.tezcode_token
-curl -s "${server}/api/scripts/macos" -o ~/tezcode-monitor.sh
+curl -fsSL "${server}/api/scripts/macos" -o ~/tezcode-monitor.sh
 chmod +x ~/tezcode-monitor.sh
 (crontab -l 2>/dev/null | grep -v tezcode-monitor; echo "*/15 * * * * bash ~/tezcode-monitor.sh >> ~/.tezcode_monitor.log 2>&1") | crontab -
 bash ~/tezcode-monitor.sh
-echo "[tezcode] O'rnatish tugadi! Har 15 daqiqada ma'lumot yuboriladi."
+echo "[tezcode] O'rnatish tugadi! Har 15 daqiqada avtomatik yuboriladi."
 `
   return new NextResponse(bash, {
     headers: { "Content-Type": "text/plain; charset=utf-8" },
