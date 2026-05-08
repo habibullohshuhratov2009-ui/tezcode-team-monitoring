@@ -190,41 +190,55 @@ function DevCard({ dev }: { dev: DevStats }) {
   const minutesAgo = dev.lastSeen
     ? Math.round((Date.now() - new Date(dev.lastSeen).getTime()) / 60000)
     : null
-  const workHours = dev.workMinutes ? (dev.workMinutes / 60).toFixed(1) : null
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-      <div className="flex justify-between items-start">
-        <div className="flex-1 min-w-0">
+    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col gap-4">
+      {/* Row 1: name + online dot + status */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${dev.isActive ? "bg-green-400" : "bg-gray-600"}`} />
           <p className="font-semibold text-white">{dev.name}</p>
-          <p className="text-xs text-gray-400 mt-0.5">
-            {statusLabel(dev.isActive, minutesAgo)}
-          </p>
-          {dev.commits.length > 0 && (
-            <p className="text-xs text-gray-600 mt-1">
-              📝 {dev.commits.length} commit · {dev.commits[0].repoName ?? "repo"}
-            </p>
-          )}
         </div>
-        <div className="text-right ml-4 flex-shrink-0">
-          <p className={`text-3xl font-bold ${tokenColor}`}>
+        <span className="text-xs text-gray-500">{statusLabel(dev.isActive, minutesAgo)}</span>
+      </div>
+
+      {/* Row 2: token % bar */}
+      <div>
+        <div className="flex justify-between items-center mb-1.5">
+          <span className="text-xs text-gray-500">Claude token</span>
+          <span className={`text-sm font-bold ${tokenColor}`}>
             {dev.claude.percent !== null ? `${dev.claude.percent}%` : "—"}
-          </p>
-          <p className="text-xs text-gray-500">
-            {workHours ? `${workHours}h ishladi` : "token"}
-          </p>
+          </span>
+        </div>
+        <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+          <div className={`h-full rounded-full ${barColor}`} style={{ width: `${percent}%` }} />
         </div>
       </div>
-      <div className="mt-3 h-2 bg-gray-800 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full ${barColor}`} style={{ width: `${percent}%` }} />
-      </div>
-      {/* Latest commit preview */}
-      {dev.commits[0] && (
-        <p className="text-xs text-gray-600 mt-2 truncate">
-          {dev.commits[0].branch && <span className="text-gray-700">[{dev.commits[0].branch}]</span>}{" "}
-          {dev.commits[0].message}
+
+      {/* Row 3: commits (always shown) */}
+      <div>
+        <p className="text-xs text-gray-600 mb-1.5">
+          Commitlar{" "}
+          <span className="text-gray-700">({dev.commits.length})</span>
         </p>
-      )}
+        {dev.commits.length === 0 ? (
+          <p className="text-xs text-gray-700">Hali commit yo'q</p>
+        ) : (
+          <div className="flex flex-col gap-1">
+            {dev.commits.slice(0, 3).map((c) => {
+              const cMin = Math.round((Date.now() - new Date(c.ts).getTime()) / 60000)
+              const cTime = cMin < 60 ? `${cMin} daq` : `${Math.round(cMin / 60)} soat`
+              return (
+                <div key={c.hash} className="flex items-center gap-2 text-xs">
+                  <span className="text-gray-700 font-mono shrink-0">{c.hash.slice(0, 7)}</span>
+                  <span className="text-gray-500 truncate flex-1">{c.message}</span>
+                  <span className="text-gray-700 shrink-0">{cTime}</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
