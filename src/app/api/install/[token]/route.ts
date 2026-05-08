@@ -11,7 +11,6 @@ export async function GET(
   const { token } = await params
   const os = new URL(req.url).searchParams.get("os")
 
-  // Validate token
   const hash = crypto.createHash("sha256").update(token).digest("hex")
   const [row] = await db
     .select()
@@ -30,6 +29,21 @@ export async function GET(
   if (os === "windows") {
     const ps = `# Tezcode Monitor — Windows o'rnatish
 "${token}" | Out-File "$env:USERPROFILE\\.tezcode_token" -Encoding utf8
+
+Write-Host ""
+Write-Host "[tezcode] Claude planingiz qaysi?"
+Write-Host "  1) Pro     — 200K token"
+Write-Host "  2) Max 5x  — 1M token"
+Write-Host "  3) Max 20x — 4M token"
+$choice = Read-Host "Tanlang (1/2/3)"
+$limit = switch ($choice) {
+  "2" { 1000000 }
+  "3" { 4000000 }
+  default { 200000 }
+}
+$limit | Out-File "$env:USERPROFILE\\.tezcode_claude_limit" -Encoding utf8
+Write-Host "[tezcode] Limit saqlandi: $limit token"
+
 $scriptPath = "$env:USERPROFILE\\tezcode-monitor.ps1"
 Invoke-WebRequest -Uri "${server}/api/scripts/windows" -OutFile $scriptPath
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
@@ -46,6 +60,20 @@ Write-Host "[tezcode] O'rnatish tugadi!"
 echo "[tezcode] O'rnatish boshlanmoqda..."
 echo "${token}" > ~/.tezcode_token
 chmod 600 ~/.tezcode_token
+
+echo ""
+echo "[tezcode] Claude planingiz qaysi?"
+echo "  1) Pro     — 200K token"
+echo "  2) Max 5x  — 1M token"
+echo "  3) Max 20x — 4M token"
+read -p "Tanlang (1/2/3): " plan_choice
+case "\$plan_choice" in
+  2) echo "1000000" > ~/.tezcode_claude_limit ;;
+  3) echo "4000000" > ~/.tezcode_claude_limit ;;
+  *)  echo "200000"  > ~/.tezcode_claude_limit ;;
+esac
+echo "[tezcode] Limit saqlandi: $(cat ~/.tezcode_claude_limit) token"
+
 curl -s "${server}/api/scripts/macos" -o ~/tezcode-monitor.sh
 chmod +x ~/tezcode-monitor.sh
 (crontab -l 2>/dev/null | grep -v tezcode-monitor; echo "*/15 * * * * bash ~/tezcode-monitor.sh >> ~/.tezcode_monitor.log 2>&1") | crontab -

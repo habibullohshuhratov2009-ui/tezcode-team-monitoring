@@ -44,7 +44,10 @@ if (-not $TOKEN) {
     exit 1
 }
 
-$claudeUsed = 0; $claudeLimit = 500000; $claudeWindow = "5h"
+$claudeUsed = 0
+$limitFile = "$env:USERPROFILE\\.tezcode_claude_limit"
+$claudeLimit = if (Test-Path $limitFile) { [int](Get-Content $limitFile -Raw).Trim() } else { 200000 }
+$claudeWindow = "5h"
 $projectsDir = "$env:USERPROFILE\\.claude\\projects"
 if (Test-Path $projectsDir) {
     $cutoff = (Get-Date).AddHours(-5)

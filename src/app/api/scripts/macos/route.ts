@@ -18,7 +18,8 @@ if [ -z "$TOKEN" ]; then
 fi
 
 CLAUDE_USED=0
-CLAUDE_LIMIT=500000
+CLAUDE_LIMIT=$(cat "$HOME/.tezcode_claude_limit" 2>/dev/null | tr -d '[:space:]')
+CLAUDE_LIMIT="\${CLAUDE_LIMIT:-200000}"
 CLAUDE_WINDOW="5h"
 PROJECTS_DIR="$HOME/.claude/projects"
 
