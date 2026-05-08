@@ -75,7 +75,10 @@ export async function POST(req: Request) {
         .limit(1)
       if (dev) {
         await sendTelegram(
-          `⚠️ <b>TOKEN ALERT</b>\n👤 ${dev.name} — ${percent}% ishlatildi\n📊 ${claudeUsed.toLocaleString()} / ${claudeLimit.toLocaleString()} token`
+          `🔴 <b>Token ogohlantirishь — ${dev.name}</b>\n\n` +
+          `Claude token limiti <b>${percent}%</b> ga yetdi!\n` +
+          `📊 Ishlatilgan: ${(claudeUsed / 1000).toFixed(0)}K / ${(claudeLimit / 1000).toFixed(0)}K token\n\n` +
+          `💡 Bekzod akaga xabar bering yoki yangi session oching.`
         )
       }
     }

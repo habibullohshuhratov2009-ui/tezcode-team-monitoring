@@ -61,18 +61,27 @@ async function sendSummary() {
       timeZone: "Asia/Tashkent",
     })
 
-    let msg = `🕐 <b>Tezcode Monitor — ${time}</b>\n`
-    msg += `👥 Aktiv: ${activeCount}/${devList.length}\n\n`
-    msg += `📊 <b>Dev holati:</b>\n`
+    let msg = `📊 <b>Tezcode — ${time} hisoboti</b>\n`
+    msg += `━━━━━━━━━━━━━━━━━\n`
+    msg += `👥 Aktiv dasturchilar: <b>${activeCount} / ${devList.length}</b>\n\n`
 
     for (const { dev, isActive, percent, commitCount, workH } of stats) {
-      const icon = !isActive ? "❌" : (percent ?? 0) >= 80 ? "⚠️" : "✅"
-      const tokenStr = percent !== null ? `${percent}%` : "—"
-      msg += `${icon} ${dev.name} — ${tokenStr} | ${commitCount} commit | ${workH}\n`
+      if (!isActive) {
+        msg += `⚫ <b>${dev.name}</b> — hozir oflayn\n`
+      } else if ((percent ?? 0) >= 80) {
+        msg += `🔴 <b>${dev.name}</b> — token <b>${percent}%</b> (kritik!) | ${commitCount} commit | ${workH} ishladi\n`
+      } else if ((percent ?? 0) >= 50) {
+        msg += `🟡 <b>${dev.name}</b> — token ${percent}% | ${commitCount} commit | ${workH} ishladi\n`
+      } else {
+        msg += `🟢 <b>${dev.name}</b> — token ${percent ?? "—"}% | ${commitCount} commit | ${workH} ishladi\n`
+      }
     }
 
+    msg += `━━━━━━━━━━━━━━━━━\n`
     if (alertCount > 0) {
-      msg += `\n🚨 <b>Ogohlantirishlar: ${alertCount} ta</b>`
+      msg += `🚨 <b>${alertCount} ta dasturchi token limiti yaqinlashdi!</b>`
+    } else {
+      msg += `✅ Hamma yaxshi, muammo yo'q`
     }
 
     await sendTelegram(msg)
