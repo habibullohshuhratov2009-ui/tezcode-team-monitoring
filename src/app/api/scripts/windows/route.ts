@@ -72,7 +72,7 @@ if (Test-Path $projectsDir) {
 
 $commits = [System.Collections.Generic.List[object]]::new()
 $seen = [System.Collections.Generic.HashSet[string]]::new()
-$gitDirs = Get-ChildItem -Path $WORK_DIR -Recurse -Depth 4 -Filter ".git" -Directory -ErrorAction SilentlyContinue
+$gitDirs = Get-ChildItem -Path $WORK_DIR -Recurse -Depth 10 -Filter ".git" -Directory -ErrorAction SilentlyContinue
 foreach ($gitDir in $gitDirs) {
     $repoDir = $gitDir.Parent.FullName; $repoName = $gitDir.Parent.Name
     $branch = & git -C $repoDir rev-parse --abbrev-ref HEAD 2>$null

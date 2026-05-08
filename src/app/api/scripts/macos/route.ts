@@ -47,7 +47,7 @@ fi
 
 COMMITS_JSON="[]"
 _raw_commits=$(
-  find "$WORK_DIR" -maxdepth 4 -name ".git" -type d 2>/dev/null \
+  find "$WORK_DIR" -maxdepth 10 -name ".git" -type d 2>/dev/null \
   | while read -r git_dir; do
       repo_dir=$(dirname "$git_dir")
       repo_name=$(basename "$repo_dir")
