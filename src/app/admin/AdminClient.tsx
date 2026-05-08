@@ -49,12 +49,6 @@ export default function AdminClient() {
     },
   })
 
-  function copyToken() {
-    if (!newToken) return
-    navigator.clipboard.writeText(newToken)
-    setCopied(true)
-  }
-
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <header className="border-b border-gray-800 px-6 py-4 flex justify-between items-center">
@@ -158,27 +152,37 @@ export default function AdminClient() {
       {/* Token modal */}
       {newToken && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg">
             <h2 className="font-bold text-lg mb-1">Token yaratildi!</h2>
             <p className="text-gray-400 text-sm mb-4">
-              Bu tokenni faqat bir marta ko'rasiz. Dasturchi skriptiga qo'shing.
+              Quyidagi buyruqni dasturchiga Telegram orqali yuboring. Faqat bir marta ko'rinadi.
             </p>
-            <div className="bg-gray-800 rounded-lg p-3 font-mono text-sm text-green-400 break-all select-all">
-              {newToken}
+
+            <p className="text-xs text-gray-500 mb-1">🍎 macOS — Terminal:</p>
+            <div className="bg-gray-800 rounded-lg p-3 font-mono text-xs text-green-400 break-all mb-2">
+              {`curl -s https://tezcode-team-monitoring-production.up.railway.app/api/install/${newToken} | bash`}
             </div>
             <button
-              onClick={copyToken}
-              className={`w-full mt-3 py-2.5 rounded-lg text-sm transition ${
-                copied
-                  ? "bg-green-700 text-green-200"
-                  : "bg-gray-700 hover:bg-gray-600 text-white"
-              }`}
+              onClick={() => { navigator.clipboard.writeText(`curl -s https://tezcode-team-monitoring-production.up.railway.app/api/install/${newToken} | bash`); setCopied(true) }}
+              className={`w-full py-2 rounded-lg text-sm transition mb-4 ${copied ? "bg-green-700 text-green-200" : "bg-gray-700 hover:bg-gray-600 text-white"}`}
             >
-              {copied ? "Nusxalandi ✓" : "Nusxalash"}
+              {copied ? "Nusxalandi ✓" : "macOS buyrug'ini nusxalash"}
             </button>
+
+            <p className="text-xs text-gray-500 mb-1">🪟 Windows — PowerShell:</p>
+            <div className="bg-gray-800 rounded-lg p-3 font-mono text-xs text-blue-400 break-all mb-2">
+              {`irm "https://tezcode-team-monitoring-production.up.railway.app/api/install/${newToken}?os=windows" | iex`}
+            </div>
             <button
-              onClick={() => setNewToken(null)}
-              className="w-full mt-2 py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 text-sm transition"
+              onClick={() => navigator.clipboard.writeText(`irm "https://tezcode-team-monitoring-production.up.railway.app/api/install/${newToken}?os=windows" | iex`)}
+              className="w-full py-2 rounded-lg text-sm bg-gray-700 hover:bg-gray-600 text-white transition mb-4"
+            >
+              Windows buyrug'ini nusxalash
+            </button>
+
+            <button
+              onClick={() => { setNewToken(null); setCopied(false) }}
+              className="w-full py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 text-sm transition"
             >
               Yopish
             </button>
