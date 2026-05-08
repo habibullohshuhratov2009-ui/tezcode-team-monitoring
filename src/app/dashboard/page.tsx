@@ -55,6 +55,11 @@ export default function DashboardPage() {
               Boshqaruv
             </a>
           )}
+          {session?.user?.role === "developer" && (
+            <a href="/setup" className="text-xs text-gray-500 hover:text-white transition">
+              O'rnatish
+            </a>
+          )}
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             className="text-xs text-gray-500 hover:text-white transition"
