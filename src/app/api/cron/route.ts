@@ -5,6 +5,7 @@ import { eq, desc, gte, and } from "drizzle-orm"
 import { sendTelegram } from "@/lib/telegram"
 
 export async function GET(req: Request) {
+  try {
   const secret = new URL(req.url).searchParams.get("secret")
   const validSecret = process.env.CRON_SECRET ?? process.env.ADMIN_PASSWORD ?? "tezcode2026"
   if (secret !== validSecret) {
@@ -54,4 +55,7 @@ export async function GET(req: Request) {
 
   await sendTelegram(msg)
   return NextResponse.json({ ok: true, sent: true })
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 })
+  }
 }
