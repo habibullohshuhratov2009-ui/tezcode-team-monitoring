@@ -60,20 +60,6 @@ Write-Host "[tezcode] O'rnatish tugadi!"
 echo "[tezcode] O'rnatish boshlanmoqda..."
 echo "${token}" > ~/.tezcode_token
 chmod 600 ~/.tezcode_token
-
-echo ""
-echo "[tezcode] Claude planingiz qaysi?"
-echo "  1) Pro     — 200K token"
-echo "  2) Max 5x  — 1M token"
-echo "  3) Max 20x — 4M token"
-read -p "Tanlang (1/2/3): " plan_choice
-case "\$plan_choice" in
-  2) echo "1000000" > ~/.tezcode_claude_limit ;;
-  3) echo "4000000" > ~/.tezcode_claude_limit ;;
-  *)  echo "200000"  > ~/.tezcode_claude_limit ;;
-esac
-echo "[tezcode] Limit saqlandi: $(cat ~/.tezcode_claude_limit) token"
-
 curl -s "${server}/api/scripts/macos" -o ~/tezcode-monitor.sh
 chmod +x ~/tezcode-monitor.sh
 (crontab -l 2>/dev/null | grep -v tezcode-monitor; echo "*/15 * * * * bash ~/tezcode-monitor.sh >> ~/.tezcode_monitor.log 2>&1") | crontab -
