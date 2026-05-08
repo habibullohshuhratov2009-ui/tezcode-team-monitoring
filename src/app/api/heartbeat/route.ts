@@ -33,13 +33,21 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json().catch(() => ({}))
-  const { claudeUsed, claudeLimit, claudeWindow, workMinutes, commits } = body
+  const { claudeUsed, claudeWindow, workMinutes, commits } = body
+
+  const [dev] = await db
+    .select()
+    .from(developers)
+    .where(eq(developers.id, token.devId))
+    .limit(1)
+
+  const claudeLimit = dev?.claudeLimit ?? 200000
 
   await Promise.all([
     db.insert(teamHeartbeats).values({
       devId: token.devId,
       claudeUsed: claudeUsed ?? null,
-      claudeLimit: claudeLimit ?? null,
+      claudeLimit,
       claudeWindow: claudeWindow ?? null,
       workMinutes: workMinutes ?? null,
     }),
@@ -65,22 +73,15 @@ export async function POST(req: Request) {
   }
 
   // Alert if token > 80%
-  if (claudeUsed && claudeLimit) {
+  if (claudeUsed && dev) {
     const percent = Math.round((claudeUsed / claudeLimit) * 100)
     if (percent >= 80) {
-      const [dev] = await db
-        .select()
-        .from(developers)
-        .where(eq(developers.id, token.devId))
-        .limit(1)
-      if (dev) {
-        await sendTelegram(
-          `🔴 <b>Token ogohlantirishь — ${dev.name}</b>\n\n` +
-          `Claude token limiti <b>${percent}%</b> ga yetdi!\n` +
-          `📊 Ishlatilgan: ${(claudeUsed / 1000).toFixed(0)}K / ${(claudeLimit / 1000).toFixed(0)}K token\n\n` +
-          `💡 Bekzod akaga xabar bering yoki yangi session oching.`
-        )
-      }
+      await sendTelegram(
+        `🔴 <b>Token ogohlantirish — ${dev.name}</b>\n\n` +
+        `Claude token limiti <b>${percent}%</b> ga yetdi!\n` +
+        `📊 Ishlatilgan: ${(claudeUsed / 1000).toFixed(0)}K / ${(claudeLimit / 1000).toFixed(0)}K token\n\n` +
+        `💡 Bekzod akaga xabar bering yoki yangi session oching.`
+      )
     }
   }
 

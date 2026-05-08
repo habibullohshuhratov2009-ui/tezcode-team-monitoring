@@ -29,14 +29,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 })
   }
 
-  const { name, email } = await req.json()
+  const { name, email, claudeLimit } = await req.json()
   if (!name?.trim()) {
     return NextResponse.json({ error: "name required" }, { status: 400 })
   }
 
   const [dev] = await db
     .insert(developers)
-    .values({ name: name.trim(), email: email?.trim() || null })
+    .values({
+      name: name.trim(),
+      email: email?.trim() || null,
+      claudeLimit: typeof claudeLimit === "number" ? claudeLimit : 200000,
+    })
     .returning()
 
   return NextResponse.json(dev, { status: 201 })

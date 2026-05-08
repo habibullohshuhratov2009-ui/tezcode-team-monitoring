@@ -8,8 +8,20 @@ type Developer = {
   name: string
   email: string | null
   status: string
+  claudeLimit: number
   createdAt: string
   hasToken: boolean
+}
+
+const PLAN_OPTIONS = [
+  { label: "Pro (200K)", value: 200000 },
+  { label: "Max 5x (1M)", value: 1000000 },
+  { label: "Max 20x (4M)", value: 4000000 },
+]
+
+function limitLabel(limit: number) {
+  const opt = PLAN_OPTIONS.find((p) => p.value === limit)
+  return opt ? opt.label : `${(limit / 1000).toFixed(0)}K`
 }
 
 export default function AdminClient() {
@@ -17,7 +29,7 @@ export default function AdminClient() {
   const [newToken, setNewToken] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
-  const [form, setForm] = useState({ name: "", email: "" })
+  const [form, setForm] = useState({ name: "", email: "", claudeLimit: 200000 })
 
   const { data: rawDevs, isLoading } = useQuery({
     queryKey: ["admin-developers"],
@@ -26,7 +38,7 @@ export default function AdminClient() {
   const devs: Developer[] = Array.isArray(rawDevs) ? rawDevs : []
 
   const addDev = useMutation({
-    mutationFn: (data: { name: string; email: string }) =>
+    mutationFn: (data: { name: string; email: string; claudeLimit: number }) =>
       fetch("/api/admin/developers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -35,8 +47,18 @@ export default function AdminClient() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-developers"] })
       setShowAdd(false)
-      setForm({ name: "", email: "" })
+      setForm({ name: "", email: "", claudeLimit: 200000 })
     },
+  })
+
+  const updateLimit = useMutation({
+    mutationFn: ({ devId, claudeLimit }: { devId: string; claudeLimit: number }) =>
+      fetch(`/api/admin/developers/${devId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ claudeLimit }),
+      }).then((r) => r.json()),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-developers"] }),
   })
 
   const genToken = useMutation({
@@ -79,28 +101,44 @@ export default function AdminClient() {
             {devs.map((dev) => (
               <div
                 key={dev.id}
-                className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex items-center justify-between"
+                className="bg-gray-900 border border-gray-800 rounded-xl p-5"
               >
-                <div>
-                  <p className="font-semibold text-white">{dev.name}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{dev.email || "Email yo'q"}</p>
-                  <span
-                    className={`text-xs mt-1.5 inline-block px-2 py-0.5 rounded-full ${
-                      dev.hasToken
-                        ? "bg-green-950 text-green-400"
-                        : "bg-gray-800 text-gray-500"
-                    }`}
-                  >
-                    {dev.hasToken ? "Token aktiv" : "Token yo'q"}
-                  </span>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-white">{dev.name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{dev.email || "Email yo'q"}</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full ${
+                          dev.hasToken ? "bg-green-950 text-green-400" : "bg-gray-800 text-gray-500"
+                        }`}
+                      >
+                        {dev.hasToken ? "Token aktiv" : "Token yo'q"}
+                      </span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400">
+                        📊 {limitLabel(dev.claudeLimit)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={dev.claudeLimit}
+                      onChange={(e) => updateLimit.mutate({ devId: dev.id, claudeLimit: Number(e.target.value) })}
+                      className="text-xs bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500 transition"
+                    >
+                      {PLAN_OPTIONS.map((p) => (
+                        <option key={p.value} value={p.value}>{p.label}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => genToken.mutate(dev.id)}
+                      disabled={genToken.isPending}
+                      className="text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-lg transition disabled:opacity-50"
+                    >
+                      {dev.hasToken ? "Tokenni yangilash" : "Token yaratish"}
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => genToken.mutate(dev.id)}
-                  disabled={genToken.isPending}
-                  className="text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-lg transition disabled:opacity-50"
-                >
-                  {dev.hasToken ? "Tokenni yangilash" : "Token yaratish"}
-                </button>
               </div>
             ))}
           </div>
@@ -126,13 +164,25 @@ export default function AdminClient() {
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 outline-none focus:border-blue-500 transition"
               />
+              <div>
+                <p className="text-xs text-gray-500 mb-1.5">Claude plan</p>
+                <select
+                  value={form.claudeLimit}
+                  onChange={(e) => setForm((f) => ({ ...f, claudeLimit: Number(e.target.value) }))}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white outline-none focus:border-blue-500 transition"
+                >
+                  {PLAN_OPTIONS.map((p) => (
+                    <option key={p.value} value={p.value}>{p.label}</option>
+                  ))}
+                </select>
+              </div>
               <p className="text-xs text-gray-600">
                 Email kiritsangiz, dasturchi o'z Google hisobidan kira oladi.
               </p>
             </div>
             <div className="flex gap-3 mt-5">
               <button
-                onClick={() => { setShowAdd(false); setForm({ name: "", email: "" }) }}
+                onClick={() => { setShowAdd(false); setForm({ name: "", email: "", claudeLimit: 200000 }) }}
                 className="flex-1 py-2.5 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 transition text-sm"
               >
                 Bekor
