@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server"
 import crypto from "crypto"
 import { db } from "@/db"
-import { devTokens, teamHeartbeats, commitsLog } from "@/db/schema"
+import { devTokens, developers, teamHeartbeats, commitsLog } from "@/db/schema"
 import { eq } from "drizzle-orm"
+import { sendTelegram } from "@/lib/telegram"
 
 type CommitPayload = {
   hash: string
@@ -60,6 +61,23 @@ export async function POST(req: Request) {
 
     if (rows.length > 0) {
       await db.insert(commitsLog).values(rows).onConflictDoNothing()
+    }
+  }
+
+  // Alert if token > 80%
+  if (claudeUsed && claudeLimit) {
+    const percent = Math.round((claudeUsed / claudeLimit) * 100)
+    if (percent >= 80) {
+      const [dev] = await db
+        .select()
+        .from(developers)
+        .where(eq(developers.id, token.devId))
+        .limit(1)
+      if (dev) {
+        await sendTelegram(
+          `⚠️ <b>TOKEN ALERT</b>\n👤 ${dev.name} — ${percent}% ishlatildi\n📊 ${claudeUsed.toLocaleString()} / ${claudeLimit.toLocaleString()} token`
+        )
+      }
     }
   }
 

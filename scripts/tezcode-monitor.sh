@@ -86,7 +86,13 @@ print(json.dumps(commits))
   COMMITS_JSON="${COMMITS_JSON:-[]}"
 fi
 
-# ── 3. Work minutes (since boot or midnight) ─────────────────────────────────
+# ── 3. Screen status ─────────────────────────────────────────────────────────
+SCREEN_ON="true"
+if pgrep -x "ScreenSaverEngine" > /dev/null 2>&1; then
+  SCREEN_ON="false"
+fi
+
+# ── 4. Work minutes (since boot or midnight) ─────────────────────────────────
 TODAY_START=$(date -v0H -v0M -v0S '+%s' 2>/dev/null || echo 0)
 BOOT_TS=$(sysctl -n kern.boottime 2>/dev/null \
   | python3 -c "import sys,re,time; m=re.search(r'sec = (\d+)',sys.stdin.read()); print(int(m.group(1))) if m else print(0)" 2>/dev/null) || true
@@ -103,7 +109,8 @@ print(json.dumps({
     'claudeLimit': $CLAUDE_LIMIT,
     'claudeWindow': '$CLAUDE_WINDOW',
     'workMinutes': $WORK_MINUTES,
-    'commits': $COMMITS_JSON
+    'commits': $COMMITS_JSON,
+    'screenOn': $SCREEN_ON
 }))
 " 2>/dev/null) || true
 
