@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine3.21 AS base
 RUN npm install -g pnpm
 
 FROM base AS deps
@@ -8,9 +8,10 @@ RUN pnpm install --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
+ARG CACHE_BUST=1
+RUN echo "Cache bust: $CACHE_BUST"
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-ARG BUILD_TIME=unknown
 RUN pnpm build
 
 FROM base AS runner
