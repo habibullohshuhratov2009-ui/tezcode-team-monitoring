@@ -1,4 +1,4 @@
-FROM node:20-alpine3.21 AS base
+FROM node:20-alpine AS base
 RUN npm install -g pnpm
 
 FROM base AS deps
@@ -8,8 +8,7 @@ RUN pnpm install --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
-ARG CACHE_BUST=1
-RUN echo "Cache bust: $CACHE_BUST"
+ADD https://api.github.com/repos/habibullohshuhratov2009-ui/tezcode-team-monitoring/commits/main /tmp/latest_commit
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN pnpm build
