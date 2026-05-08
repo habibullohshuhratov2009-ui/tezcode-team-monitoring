@@ -9,7 +9,10 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params
-  const os = new URL(req.url).searchParams.get("os")
+  const url = new URL(req.url)
+  const os = url.searchParams.get("os")
+  const planParam = url.searchParams.get("plan") ?? "pro"
+  const claudeLimit = planParam === "max20x" ? 4000000 : planParam === "max5x" ? 1000000 : 200000
 
   const hash = crypto.createHash("sha256").update(token).digest("hex")
   const [row] = await db
@@ -58,9 +61,11 @@ Write-Host "[tezcode] O'rnatish tugadi!"
 
   const bash = `#!/bin/bash
 set -e
-echo "[tezcode] v3 - O'rnatish boshlanmoqda..."
+echo "[tezcode] v4 - O'rnatish boshlanmoqda..."
 echo "${token}" > ~/.tezcode_token
 chmod 600 ~/.tezcode_token
+echo "${claudeLimit}" > ~/.tezcode_claude_limit
+echo "[tezcode] Claude limit: ${claudeLimit} token (${planParam})"
 curl -fsSL "${server}/api/scripts/macos" -o ~/tezcode-monitor.sh
 chmod +x ~/tezcode-monitor.sh
 (crontab -l 2>/dev/null | grep -v tezcode-monitor; echo "*/15 * * * * bash ~/tezcode-monitor.sh >> ~/.tezcode_monitor.log 2>&1") | crontab -
