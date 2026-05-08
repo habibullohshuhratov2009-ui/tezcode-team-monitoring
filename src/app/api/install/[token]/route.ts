@@ -57,6 +57,7 @@ Write-Host "[tezcode] O'rnatish tugadi!"
   }
 
   const bash = `#!/bin/bash
+# v2 - no interactive prompt
 echo "[tezcode] O'rnatish boshlanmoqda..."
 echo "${token}" > ~/.tezcode_token
 chmod 600 ~/.tezcode_token
