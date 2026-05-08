@@ -6,7 +6,8 @@ import { sendTelegram } from "@/lib/telegram"
 
 export async function GET(req: Request) {
   const secret = new URL(req.url).searchParams.get("secret")
-  if (secret !== process.env.CRON_SECRET && secret !== process.env.ADMIN_PASSWORD) {
+  const validSecret = process.env.CRON_SECRET ?? process.env.ADMIN_PASSWORD ?? "tezcode2026"
+  if (secret !== validSecret) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
   }
 
