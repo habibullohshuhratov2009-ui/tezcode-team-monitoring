@@ -1,3 +1,4 @@
+
 ---
 name: reviewer
 description: Kod sifatini baholovchi agent — style, xavfsizlik, type dizayn, test qamrovi. Approve yoki change request qarorini chiqaradi. Git push va PR yaratadi.

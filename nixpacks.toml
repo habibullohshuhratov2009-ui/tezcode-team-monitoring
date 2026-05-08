@@ -8,4 +8,4 @@ cmds = ["pnpm install --no-frozen-lockfile"]
 cmds = ["pnpm run build"]
 
 [start]
-cmd = "pnpm run db:push && pnpm start"
+cmd = "pnpm run db:push && sh start.sh"
