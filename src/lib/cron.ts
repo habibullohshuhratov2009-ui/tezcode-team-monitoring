@@ -69,15 +69,11 @@ async function sendSummary() {
     msg += `👥 Aktiv dasturchilar: <b>${activeCount} / ${devList.length}</b>\n\n`
 
     for (const { dev, isActive, percent, commitCount, workH } of stats) {
-      if (!isActive) {
-        msg += `⚫ <b>${dev.name}</b> — hozir oflayn\n`
-      } else if ((percent ?? 0) >= 80) {
-        msg += `🔴 <b>${dev.name}</b> — token <b>${percent}%</b> (kritik!) | ${commitCount} commit | ${workH} ishladi\n`
-      } else if ((percent ?? 0) >= 50) {
-        msg += `🟡 <b>${dev.name}</b> — token ${percent}% | ${commitCount} commit | ${workH} ishladi\n`
-      } else {
-        msg += `🟢 <b>${dev.name}</b> — token ${percent ?? "—"}% | ${commitCount} commit | ${workH} ishladi\n`
-      }
+      const tokenStr = percent !== null ? `${percent}%` : "—"
+      const dot = !isActive ? "⚫" : (percent ?? 0) >= 80 ? "🔴" : (percent ?? 0) >= 50 ? "🟡" : "🟢"
+      const statusStr = isActive ? `${workH} ishladi` : "oflayn"
+      const tokenBold = (percent ?? 0) >= 80 ? `<b>${tokenStr}</b>` : tokenStr
+      msg += `${dot} <b>${dev.name}</b> — ${statusStr} | token ${tokenBold} | ${commitCount} commit\n`
     }
 
     msg += `━━━━━━━━━━━━━━━━━\n`
