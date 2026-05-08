@@ -119,11 +119,7 @@ function DevView({ dev }: { dev: DevStats }) {
       <div className="text-center">
         <p className="text-gray-400 text-sm">Salom, {dev.name}</p>
         <p className="text-gray-500 text-xs mt-1">
-          {dev.isActive
-            ? `💚 Aktiv — ${minutesAgo} daq oldin`
-            : minutesAgo !== null
-            ? `💤 Inaktiv — ${minutesAgo} daq oldin`
-            : "⚫ Hali ma'lumot yo'q"}
+          {statusLabel(dev.isActive, minutesAgo)}
         </p>
       </div>
 
@@ -202,11 +198,7 @@ function DevCard({ dev }: { dev: DevStats }) {
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-white">{dev.name}</p>
           <p className="text-xs text-gray-400 mt-0.5">
-            {dev.isActive
-              ? `💚 Aktiv — ${minutesAgo} daq oldin`
-              : minutesAgo !== null
-              ? `💤 Inaktiv — ${minutesAgo} daq oldin`
-              : "⚫ Ma'lumot yo'q"}
+            {statusLabel(dev.isActive, minutesAgo)}
           </p>
           {dev.commits.length > 0 && (
             <p className="text-xs text-gray-600 mt-1">
@@ -238,6 +230,14 @@ function DevCard({ dev }: { dev: DevStats }) {
 }
 
 // ─── Shared components ──────────────────────────────────────────────
+function statusLabel(isActive: boolean, minutesAgo: number | null): string {
+  if (isActive) return "💚 Ishlayapti"
+  if (minutesAgo === null) return "⚫ Ma'lumot yo'q"
+  if (minutesAgo < 60) return `💤 ${minutesAgo} daqiqa ishlamadi`
+  if (minutesAgo < 1440) return `💤 ${Math.round(minutesAgo / 60)} soat ishlamadi`
+  return `💤 ${Math.round(minutesAgo / 1440)} kun ishlamadi`
+}
+
 function StatCard({ label, value, alert }: { label: string; value: string; alert?: boolean }) {
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">

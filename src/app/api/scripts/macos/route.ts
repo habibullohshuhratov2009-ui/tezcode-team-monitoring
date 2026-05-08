@@ -20,13 +20,13 @@ fi
 CLAUDE_USED=0
 CLAUDE_LIMIT=$(cat "$HOME/.tezcode_claude_limit" 2>/dev/null | tr -d '[:space:]')
 CLAUDE_LIMIT="\${CLAUDE_LIMIT:-200000}"
-CLAUDE_WINDOW="5h"
+CLAUDE_WINDOW="session"
 PROJECTS_DIR="$HOME/.claude/projects"
 
 if [ -d "$PROJECTS_DIR" ]; then
-  CLAUDE_USED=$(find "$PROJECTS_DIR" -name "*.jsonl" -mmin -300 2>/dev/null \
-    -exec cat {} + 2>/dev/null \
-    | python3 -c "
+  LATEST_JSONL=$(find "$PROJECTS_DIR" -name "*.jsonl" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
+  if [ -n "$LATEST_JSONL" ]; then
+    CLAUDE_USED=$(cat "$LATEST_JSONL" 2>/dev/null | python3 -c "
 import sys, json
 total = 0
 for line in sys.stdin:
@@ -42,6 +42,7 @@ for line in sys.stdin:
     except: pass
 print(total)
 " 2>/dev/null) || true
+  fi
   CLAUDE_USED="\${CLAUDE_USED:-0}"
 fi
 
