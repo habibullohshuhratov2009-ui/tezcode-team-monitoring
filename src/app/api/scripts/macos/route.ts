@@ -125,29 +125,33 @@ except: sys.exit(0)
 _api_out="$_claude_pct"
 _claude_pct=$(echo "$_api_out" | awk '{print $1}')
 _weekly_pct=$(echo "$_api_out" | awk '{print $2}')
-WEEKLY_PERCENT="\${_weekly_pct:-0}"
+WEEKLY_PERCENT="\${_weekly_pct}"
 
 if [ -n "$_claude_pct" ] && [ "$_claude_pct" -ge 0 ] 2>/dev/null; then
   CLAUDE_USED=$(( _claude_pct * CLAUDE_LIMIT / 100 ))
 else
-  # Fallback: latest JSONL session tokens
+  # Fallback: JSONL files modified in last 5 hours, filtered by timestamp
   if [ -d "$PROJECTS_DIR" ]; then
-    LATEST_JSONL=$(find "$PROJECTS_DIR" -name "*.jsonl" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
-    if [ -n "$LATEST_JSONL" ]; then
-      CLAUDE_USED=$(cat "$LATEST_JSONL" 2>/dev/null | python3 -c "
-import sys, json
+    CLAUDE_USED=$(find "$PROJECTS_DIR" -name "*.jsonl" -mmin -300 2>/dev/null \
+      -exec cat {} + 2>/dev/null \
+      | python3 -c "
+import sys, json, time, datetime
 total = 0
+cutoff = time.time() - 18000
 for line in sys.stdin:
     line = line.strip()
     if not line: continue
     try:
         d = json.loads(line)
+        ts = d.get('timestamp','')
+        if ts:
+            t = datetime.datetime.fromisoformat(ts.replace('Z','+00:00')).timestamp()
+            if t < cutoff: continue
         usage = d.get('message', {}).get('usage', d.get('usage', {}))
         total += usage.get('output_tokens', 0)
     except: pass
 print(total)
 " 2>/dev/null) || true
-    fi
     CLAUDE_USED="\${CLAUDE_USED:-0}"
   fi
 fi
@@ -200,11 +204,14 @@ WORK_MINUTES=$(( (NOW - ACTIVE_SINCE) / 60 ))
 
 PAYLOAD=$(python3 -c "
 import json
-print(json.dumps({'claudeUsed':$CLAUDE_USED,'claudeLimit':$CLAUDE_LIMIT,'claudeWindow':'$CLAUDE_WINDOW','weeklyOutputTokens':$WEEKLY_OUTPUT_TOKENS,'weeklyPercent':$WEEKLY_PERCENT,'workMinutes':$WORK_MINUTES,'commits':$COMMITS_JSON,'screenOn':$SCREEN_ON}))
+d={'claudeUsed':$CLAUDE_USED,'claudeLimit':$CLAUDE_LIMIT,'claudeWindow':'$CLAUDE_WINDOW','weeklyOutputTokens':$WEEKLY_OUTPUT_TOKENS,'workMinutes':$WORK_MINUTES,'commits':$COMMITS_JSON,'screenOn':$SCREEN_ON}
+wp='$WEEKLY_PERCENT'
+if wp.isdigit(): d['weeklyPercent']=int(wp)
+print(json.dumps(d))
 " 2>/dev/null) || true
 
 if [ -z "$PAYLOAD" ]; then
-  PAYLOAD="{\\"claudeUsed\\":$CLAUDE_USED,\\"claudeLimit\\":$CLAUDE_LIMIT,\\"claudeWindow\\":\\"$CLAUDE_WINDOW\\",\\"weeklyOutputTokens\\":$WEEKLY_OUTPUT_TOKENS,\\"weeklyPercent\\":$WEEKLY_PERCENT,\\"workMinutes\\":$WORK_MINUTES,\\"commits\\":[]}"
+  PAYLOAD="{\\"claudeUsed\\":$CLAUDE_USED,\\"claudeLimit\\":$CLAUDE_LIMIT,\\"claudeWindow\\":\\"$CLAUDE_WINDOW\\",\\"weeklyOutputTokens\\":$WEEKLY_OUTPUT_TOKENS,\\"workMinutes\\":$WORK_MINUTES,\\"commits\\":[]}"
 fi
 
 HTTP_STATUS=$(curl -s -w "%{http_code}" -o /tmp/tezcode_resp.txt -X POST "$SERVER/api/heartbeat" \

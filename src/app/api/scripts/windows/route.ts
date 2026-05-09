@@ -172,17 +172,19 @@ if ($apiOut -match '^(\\d+)(?:\\s+(\\d+))?$') {
 } elseif ($apiOut -match '^\\d+$') {
     $claudeUsed = [int][math]::Round([int]$apiOut * $claudeLimit / 100)
 } else {
-    # Fallback: latest JSONL session tokens
+    # Fallback: JSONL files modified in last 5 hours, filtered by timestamp
     if (Test-Path $projectsDir) {
-        $latestFile = Get-ChildItem -Path $projectsDir -Recurse -Filter "*.jsonl" -ErrorAction SilentlyContinue |
-            Sort-Object LastWriteTime -Descending |
-            Select-Object -First 1
-        if ($latestFile) {
-            $lines = Get-Content $latestFile.FullName -Encoding utf8 -ErrorAction SilentlyContinue
+        $fiveHourCutoff = (Get-Date).AddHours(-5)
+        $recentFiles = Get-ChildItem -Path $projectsDir -Recurse -Filter "*.jsonl" -ErrorAction SilentlyContinue |
+            Where-Object { $_.LastWriteTime -gt $fiveHourCutoff }
+        foreach ($file in $recentFiles) {
+            $lines = Get-Content $file.FullName -Encoding utf8 -ErrorAction SilentlyContinue
             foreach ($line in $lines) {
                 if (-not $line.Trim()) { continue }
                 try {
                     $obj = $line | ConvertFrom-Json -ErrorAction SilentlyContinue
+                    $ts = $obj.timestamp
+                    if ($ts -and ([datetime]::Parse($ts) -lt $fiveHourCutoff)) { continue }
                     $usage = if ($obj.message.usage) { $obj.message.usage } elseif ($obj.usage) { $obj.usage } else { $null }
                     if ($usage) { $claudeUsed += [int]($usage.output_tokens ?? 0) }
                 } catch {}
