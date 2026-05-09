@@ -129,31 +129,6 @@ WEEKLY_PERCENT="\${_weekly_pct}"
 
 if [ -n "$_claude_pct" ] && [ "$_claude_pct" -ge 0 ] 2>/dev/null; then
   CLAUDE_USED=$(( _claude_pct * CLAUDE_LIMIT / 100 ))
-else
-  # Fallback: JSONL files modified in last 5 hours, filtered by timestamp
-  if [ -d "$PROJECTS_DIR" ]; then
-    CLAUDE_USED=$(find "$PROJECTS_DIR" -name "*.jsonl" -mmin -300 2>/dev/null \
-      -exec cat {} + 2>/dev/null \
-      | python3 -c "
-import sys, json, time, datetime
-total = 0
-cutoff = time.time() - 18000
-for line in sys.stdin:
-    line = line.strip()
-    if not line: continue
-    try:
-        d = json.loads(line)
-        ts = d.get('timestamp','')
-        if ts:
-            t = datetime.datetime.fromisoformat(ts.replace('Z','+00:00')).timestamp()
-            if t < cutoff: continue
-        usage = d.get('message', {}).get('usage', d.get('usage', {}))
-        total += usage.get('output_tokens', 0)
-    except: pass
-print(total)
-" 2>/dev/null) || true
-    CLAUDE_USED="\${CLAUDE_USED:-0}"
-  fi
 fi
 
 COMMITS_JSON="[]"
