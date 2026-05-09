@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/config"
 import { db } from "@/db"
-import { developers } from "@/db/schema"
+import { developers, teamHeartbeats, commitsLog } from "@/db/schema"
 import { eq } from "drizzle-orm"
 
 export async function PATCH(
@@ -28,4 +28,22 @@ export async function PATCH(
     .returning()
 
   return NextResponse.json(dev)
+}
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getServerSession(authOptions)
+  if (session?.user?.role !== "admin") {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 })
+  }
+
+  const { id } = await params
+
+  await db.delete(teamHeartbeats).where(eq(teamHeartbeats.devId, id))
+  await db.delete(commitsLog).where(eq(commitsLog.devId, id))
+  await db.delete(developers).where(eq(developers.id, id))
+
+  return NextResponse.json({ ok: true })
 }

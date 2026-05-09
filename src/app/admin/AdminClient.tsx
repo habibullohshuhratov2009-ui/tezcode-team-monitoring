@@ -14,7 +14,7 @@ type Developer = {
 }
 
 const PLAN_OPTIONS = [
-  { label: "Pro (200K)", value: 200000 },
+  { label: "Pro (88K)", value: 88000 },
   { label: "Max 5x (1M)", value: 1000000 },
   { label: "Max 20x (4M)", value: 4000000 },
 ]
@@ -29,7 +29,8 @@ export default function AdminClient() {
   const [newToken, setNewToken] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
-  const [form, setForm] = useState({ name: "", email: "", claudeLimit: 200000 })
+  const [form, setForm] = useState({ name: "", email: "", claudeLimit: 88000 })
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const { data: rawDevs, isLoading } = useQuery({
     queryKey: ["admin-developers"],
@@ -67,6 +68,15 @@ export default function AdminClient() {
     onSuccess: (data: { token: string }) => {
       setNewToken(data.token)
       setCopied(false)
+      qc.invalidateQueries({ queryKey: ["admin-developers"] })
+    },
+  })
+
+  const deleteDev = useMutation({
+    mutationFn: (devId: string) =>
+      fetch(`/api/admin/developers/${devId}`, { method: "DELETE" }).then((r) => r.json()),
+    onSuccess: () => {
+      setConfirmDeleteId(null)
       qc.invalidateQueries({ queryKey: ["admin-developers"] })
     },
   })
@@ -121,22 +131,49 @@ export default function AdminClient() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <select
-                      value={dev.claudeLimit}
-                      onChange={(e) => updateLimit.mutate({ devId: dev.id, claudeLimit: Number(e.target.value) })}
-                      className="text-xs bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500 transition"
-                    >
-                      {PLAN_OPTIONS.map((p) => (
-                        <option key={p.value} value={p.value}>{p.label}</option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={() => genToken.mutate(dev.id)}
-                      disabled={genToken.isPending}
-                      className="text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-lg transition disabled:opacity-50"
-                    >
-                      {dev.hasToken ? "Tokenni yangilash" : "Token yaratish"}
-                    </button>
+                    {confirmDeleteId === dev.id ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-red-400">O'chirilsinmi?</span>
+                        <button
+                          onClick={() => deleteDev.mutate(dev.id)}
+                          disabled={deleteDev.isPending}
+                          className="text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition disabled:opacity-50"
+                        >
+                          Ha
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition"
+                        >
+                          Yo'q
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <select
+                          value={dev.claudeLimit}
+                          onChange={(e) => updateLimit.mutate({ devId: dev.id, claudeLimit: Number(e.target.value) })}
+                          className="text-xs bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500 transition"
+                        >
+                          {PLAN_OPTIONS.map((p) => (
+                            <option key={p.value} value={p.value}>{p.label}</option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={() => genToken.mutate(dev.id)}
+                          disabled={genToken.isPending}
+                          className="text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-lg transition disabled:opacity-50"
+                        >
+                          {dev.hasToken ? "Tokenni yangilash" : "Token yaratish"}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(dev.id)}
+                          className="text-sm bg-gray-800 hover:bg-red-900 text-red-400 px-3 py-2 rounded-lg transition"
+                        >
+                          ✕
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -182,7 +219,7 @@ export default function AdminClient() {
             </div>
             <div className="flex gap-3 mt-5">
               <button
-                onClick={() => { setShowAdd(false); setForm({ name: "", email: "", claudeLimit: 200000 }) }}
+                onClick={() => { setShowAdd(false); setForm({ name: "", email: "", claudeLimit: 88000 }) }}
                 className="flex-1 py-2.5 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 transition text-sm"
               >
                 Bekor
