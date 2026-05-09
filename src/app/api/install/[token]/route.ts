@@ -61,37 +61,15 @@ Write-Host "[tezcode] O'rnatish tugadi!"
 
   const bash = `#!/bin/bash
 set -e
-echo "[tezcode] v5 - O'rnatish boshlanmoqda..."
+echo "[tezcode] O'rnatish boshlanmoqda..."
 echo "${token}" > ~/.tezcode_token
 chmod 600 ~/.tezcode_token
 echo "${claudeLimit}" > ~/.tezcode_claude_limit
-echo "[tezcode] Claude limit: ${claudeLimit} token (${planParam})"
-
-# Asosiy monitoring skript
 curl -fsSL "${server}/api/scripts/macos" -o ~/tezcode-monitor.sh
 chmod +x ~/tezcode-monitor.sh
-
-# Playwright Python skript (Claude.ai real usage)
-curl -fsSL "${server}/api/scripts/playwright" -o ~/.tezcode_claude_usage.py
-echo "[tezcode] Playwright skript yuklandi"
-
-# Playwright o'rnatish (agar yo'q bo'lsa)
-if ! python3 -c "import playwright" 2>/dev/null; then
-  echo "[tezcode] Playwright o'rnatilmoqda..."
-  pip3 install playwright --quiet 2>/dev/null || pip install playwright --quiet 2>/dev/null || true
-  python3 -m playwright install chromium 2>/dev/null || true
-  echo "[tezcode] Playwright tayyor"
-fi
-
-# Cron
 (crontab -l 2>/dev/null | grep -v tezcode-monitor; echo "*/15 * * * * bash ~/tezcode-monitor.sh >> ~/.tezcode_monitor.log 2>&1") | crontab -
-
-# Birinchi marta Claude.ai ga login (brauzer ochildi)
-echo "[tezcode] Claude.ai ga login qiling (brauzer ochiladi)..."
-python3 ~/.tezcode_claude_usage.py 2>&1 || true
-
 bash ~/tezcode-monitor.sh
-echo "[tezcode] O'rnatish tugadi! Har 15 daqiqada avtomatik yuboriladi."
+echo "[tezcode] Tayyor! Har 15 daqiqada avtomatik yuboriladi."
 `
   return new NextResponse(bash, {
     headers: { "Content-Type": "text/plain; charset=utf-8" },
