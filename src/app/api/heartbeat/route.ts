@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json().catch(() => ({}))
-  const { claudeUsed, claudeLimit: scriptLimit, claudeWindow, workMinutes, commits } = body
+  const { claudeUsed, claudeLimit: scriptLimit, claudeWindow, weeklyOutputTokens, workMinutes, commits } = body
 
   const [dev] = await db
     .select()
@@ -51,6 +51,7 @@ export async function POST(req: Request) {
       claudeLimit,
       claudeWindow: claudeWindow ?? null,
       workMinutes: workMinutes ?? null,
+      weeklyOutputTokens: weeklyOutputTokens ?? null,
     }),
     db.update(devTokens).set({ lastUsedAt: new Date() }).where(eq(devTokens.id, token.id)),
   ])

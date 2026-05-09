@@ -42,13 +42,14 @@ export const devTokens = pgTable("dev_tokens", {
 ])
 
 export const teamHeartbeats = pgTable("team_heartbeats", {
-  id:           bigserial("id", { mode: "number" }).primaryKey(),
-  devId:        uuid("dev_id").notNull().references(() => developers.id),
-  ts:           timestamp("ts", { withTimezone: true }).notNull().defaultNow(),
-  claudeUsed:   integer("claude_used"),
-  claudeLimit:  integer("claude_limit"),
-  claudeWindow: text("claude_window"),
-  workMinutes:  integer("work_minutes"),
+  id:                  bigserial("id", { mode: "number" }).primaryKey(),
+  devId:               uuid("dev_id").notNull().references(() => developers.id),
+  ts:                  timestamp("ts", { withTimezone: true }).notNull().defaultNow(),
+  claudeUsed:          integer("claude_used"),
+  claudeLimit:         integer("claude_limit"),
+  claudeWindow:        text("claude_window"),
+  workMinutes:         integer("work_minutes"),
+  weeklyOutputTokens:  integer("weekly_output_tokens"),
 }, (t) => [
   index("idx_hb_dev_ts").on(t.devId, t.ts),
   index("idx_hb_ts").on(t.ts),

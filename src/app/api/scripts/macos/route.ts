@@ -23,6 +23,8 @@ CLAUDE_LIMIT="\${CLAUDE_LIMIT:-88000}"
 CLAUDE_WINDOW="session"
 PROJECTS_DIR="$HOME/.claude/projects"
 
+WEEKLY_OUTPUT_TOKENS=0
+
 if [ -d "$PROJECTS_DIR" ]; then
   LATEST_JSONL=$(find "$PROJECTS_DIR" -name "*.jsonl" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
   if [ -n "$LATEST_JSONL" ]; then
@@ -41,6 +43,23 @@ print(total)
 " 2>/dev/null) || true
   fi
   CLAUDE_USED="\${CLAUDE_USED:-0}"
+
+  WEEKLY_OUTPUT_TOKENS=$(find "$PROJECTS_DIR" -name "*.jsonl" -mmin -10080 2>/dev/null \
+    -exec cat {} + 2>/dev/null \
+    | python3 -c "
+import sys, json
+total = 0
+for line in sys.stdin:
+    line = line.strip()
+    if not line: continue
+    try:
+        d = json.loads(line)
+        usage = d.get('message', {}).get('usage', d.get('usage', {}))
+        total += usage.get('output_tokens', 0)
+    except: pass
+print(total)
+" 2>/dev/null) || true
+  WEEKLY_OUTPUT_TOKENS="\${WEEKLY_OUTPUT_TOKENS:-0}"
 fi
 
 COMMITS_JSON="[]"
@@ -91,11 +110,11 @@ WORK_MINUTES=$(( (NOW - ACTIVE_SINCE) / 60 ))
 
 PAYLOAD=$(python3 -c "
 import json
-print(json.dumps({'claudeUsed':$CLAUDE_USED,'claudeLimit':$CLAUDE_LIMIT,'claudeWindow':'$CLAUDE_WINDOW','workMinutes':$WORK_MINUTES,'commits':$COMMITS_JSON,'screenOn':$SCREEN_ON}))
+print(json.dumps({'claudeUsed':$CLAUDE_USED,'claudeLimit':$CLAUDE_LIMIT,'claudeWindow':'$CLAUDE_WINDOW','weeklyOutputTokens':$WEEKLY_OUTPUT_TOKENS,'workMinutes':$WORK_MINUTES,'commits':$COMMITS_JSON,'screenOn':$SCREEN_ON}))
 " 2>/dev/null) || true
 
 if [ -z "$PAYLOAD" ]; then
-  PAYLOAD="{\\"claudeUsed\\":$CLAUDE_USED,\\"claudeLimit\\":$CLAUDE_LIMIT,\\"claudeWindow\\":\\"$CLAUDE_WINDOW\\",\\"workMinutes\\":$WORK_MINUTES,\\"commits\\":[]}"
+  PAYLOAD="{\\"claudeUsed\\":$CLAUDE_USED,\\"claudeLimit\\":$CLAUDE_LIMIT,\\"claudeWindow\\":\\"$CLAUDE_WINDOW\\",\\"weeklyOutputTokens\\":$WEEKLY_OUTPUT_TOKENS,\\"workMinutes\\":$WORK_MINUTES,\\"commits\\":[]}"
 fi
 
 HTTP_STATUS=$(curl -s -w "%{http_code}" -o /tmp/tezcode_resp.txt -X POST "$SERVER/api/heartbeat" \

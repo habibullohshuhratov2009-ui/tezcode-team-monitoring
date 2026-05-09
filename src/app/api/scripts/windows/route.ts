@@ -45,6 +45,7 @@ if (-not $TOKEN) {
 }
 
 $claudeUsed = 0
+$weeklyOutputTokens = 0
 $limitFile = "$env:USERPROFILE\\.tezcode_claude_limit"
 $claudeLimit = if (Test-Path $limitFile) { [int](Get-Content $limitFile -Raw).Trim() } else { 88000 }
 $claudeWindow = "session"
@@ -60,9 +61,21 @@ if (Test-Path $projectsDir) {
             try {
                 $obj = $line | ConvertFrom-Json -ErrorAction SilentlyContinue
                 $usage = if ($obj.message.usage) { $obj.message.usage } elseif ($obj.usage) { $obj.usage } else { $null }
-                if ($usage) {
-                    $claudeUsed += [int]($usage.output_tokens ?? 0)
-                }
+                if ($usage) { $claudeUsed += [int]($usage.output_tokens ?? 0) }
+            } catch {}
+        }
+    }
+    $weeklyCutoff = (Get-Date).AddDays(-7)
+    $weeklyFiles = Get-ChildItem -Path $projectsDir -Recurse -Filter "*.jsonl" -ErrorAction SilentlyContinue |
+        Where-Object { $_.LastWriteTime -gt $weeklyCutoff }
+    foreach ($file in $weeklyFiles) {
+        $lines = Get-Content $file.FullName -Encoding utf8 -ErrorAction SilentlyContinue
+        foreach ($line in $lines) {
+            if (-not $line.Trim()) { continue }
+            try {
+                $obj = $line | ConvertFrom-Json -ErrorAction SilentlyContinue
+                $usage = if ($obj.message.usage) { $obj.message.usage } elseif ($obj.usage) { $obj.usage } else { $null }
+                if ($usage) { $weeklyOutputTokens += [int]($usage.output_tokens ?? 0) }
             } catch {}
         }
     }
@@ -95,7 +108,7 @@ $activeSince = if ($bootTime -gt $midnight) { $bootTime } else { $midnight }
 $workMinutes = [int]((Get-Date) - $activeSince).TotalMinutes
 $screenLocked = (Get-Process -Name "LogonUI" -ErrorAction SilentlyContinue) -ne $null
 
-$payload = [PSCustomObject]@{ claudeUsed=$claudeUsed; claudeLimit=$claudeLimit; claudeWindow=$claudeWindow; workMinutes=$workMinutes; commits=$commits; screenOn=(-not $screenLocked) } | ConvertTo-Json -Depth 5 -Compress
+$payload = [PSCustomObject]@{ claudeUsed=$claudeUsed; claudeLimit=$claudeLimit; claudeWindow=$claudeWindow; weeklyOutputTokens=$weeklyOutputTokens; workMinutes=$workMinutes; commits=$commits; screenOn=(-not $screenLocked) } | ConvertTo-Json -Depth 5 -Compress
 
 try {
     Invoke-RestMethod -Uri "$SERVER/api/heartbeat" -Method POST -Headers @{ Authorization = "Bearer $TOKEN" } -ContentType "application/json; charset=utf-8" -Body ([System.Text.Encoding]::UTF8.GetBytes($payload)) | Out-Null

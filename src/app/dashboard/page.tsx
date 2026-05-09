@@ -23,6 +23,7 @@ type DevStats = {
     limit: number | null
     percent: number | null
     window: string | null
+    weeklyTokens: number | null
   }
   commits: Commit[]
 }
@@ -111,7 +112,6 @@ function DevView({ dev }: { dev: DevStats }) {
 
   const tokenColor = percent >= 80 ? "text-red-400" : percent >= 50 ? "text-yellow-400" : "text-green-400"
   const barColor = percent >= 80 ? "bg-red-500" : percent >= 50 ? "bg-yellow-500" : "bg-green-500"
-  const workHours = dev.workMinutes ? (dev.workMinutes / 60).toFixed(1) : null
 
   return (
     <div className="flex flex-col gap-8 pt-4">
@@ -141,14 +141,18 @@ function DevView({ dev }: { dev: DevStats }) {
           </div>
         </div>
 
-        {/* Work hours */}
+        {/* Weekly tokens */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 text-center">
-          <p className="text-gray-500 text-xs mb-1">Bugun ishlagan</p>
-          <p className="text-5xl font-bold text-blue-400">
-            {workHours ? `${workHours}h` : "—"}
+          <p className="text-gray-500 text-xs mb-1">Haftalik token</p>
+          <p className="text-3xl font-bold text-blue-400">
+            {dev.claude.weeklyTokens !== null
+              ? `${(dev.claude.weeklyTokens / 1000).toFixed(0)}K`
+              : "—"}
           </p>
           <p className="text-gray-600 text-xs mt-1">
-            {dev.workMinutes ? `${dev.workMinutes} daqiqa` : "Hali ma'lumot yo'q"}
+            {dev.claude.weeklyTokens !== null
+              ? `${dev.claude.weeklyTokens.toLocaleString()} output token`
+              : "Hali ma'lumot yo'q"}
           </p>
         </div>
       </div>
