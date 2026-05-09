@@ -47,14 +47,14 @@ if (-not $TOKEN) {
 $claudeUsed = 0
 $limitFile = "$env:USERPROFILE\\.tezcode_claude_limit"
 $claudeLimit = if (Test-Path $limitFile) { [int](Get-Content $limitFile -Raw).Trim() } else { 88000 }
-$claudeWindow = "5h"
+$claudeWindow = "session"
 $projectsDir = "$env:USERPROFILE\\.claude\\projects"
 if (Test-Path $projectsDir) {
-    $cutoff = (Get-Date).AddHours(-5)
-    $jsonlFiles = Get-ChildItem -Path $projectsDir -Recurse -Filter "*.jsonl" -ErrorAction SilentlyContinue |
-        Where-Object { $_.LastWriteTime -gt $cutoff }
-    foreach ($file in $jsonlFiles) {
-        $lines = Get-Content $file.FullName -Encoding utf8 -ErrorAction SilentlyContinue
+    $latestFile = Get-ChildItem -Path $projectsDir -Recurse -Filter "*.jsonl" -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+    if ($latestFile) {
+        $lines = Get-Content $latestFile.FullName -Encoding utf8 -ErrorAction SilentlyContinue
         foreach ($line in $lines) {
             if (-not $line.Trim()) { continue }
             try {
