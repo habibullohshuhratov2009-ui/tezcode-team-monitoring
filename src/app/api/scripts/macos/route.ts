@@ -24,25 +24,8 @@ CLAUDE_WINDOW="session"
 PROJECTS_DIR="$HOME/.claude/projects"
 WEEKLY_OUTPUT_TOKENS=0
 
+# Weekly tokens from JSONL (last 7 days) — always calculated
 if [ -d "$PROJECTS_DIR" ]; then
-  LATEST_JSONL=$(find "$PROJECTS_DIR" -name "*.jsonl" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
-  if [ -n "$LATEST_JSONL" ]; then
-    CLAUDE_USED=$(cat "$LATEST_JSONL" 2>/dev/null | python3 -c "
-import sys, json
-total = 0
-for line in sys.stdin:
-    line = line.strip()
-    if not line: continue
-    try:
-        d = json.loads(line)
-        usage = d.get('message', {}).get('usage', d.get('usage', {}))
-        total += usage.get('output_tokens', 0)
-    except: pass
-print(total)
-" 2>/dev/null) || true
-  fi
-  CLAUDE_USED="\${CLAUDE_USED:-0}"
-
   WEEKLY_OUTPUT_TOKENS=$(find "$PROJECTS_DIR" -name "*.jsonl" -mmin -10080 2>/dev/null \
     -exec cat {} + 2>/dev/null \
     | python3 -c "
@@ -59,6 +42,105 @@ for line in sys.stdin:
 print(total)
 " 2>/dev/null) || true
   WEEKLY_OUTPUT_TOKENS="\${WEEKLY_OUTPUT_TOKENS:-0}"
+fi
+
+# Real Claude.ai session % via Chrome cookies → /api/organizations/{id}/usage
+_claude_pct=$(python3 -c "
+import sqlite3, shutil, subprocess, hashlib, json, sys, urllib.request
+from pathlib import Path
+
+def chrome_key():
+    try:
+        pw = subprocess.check_output(
+            ['security','find-generic-password','-wa','Chrome Safe Storage'],
+            stderr=subprocess.DEVNULL
+        ).strip()
+        return hashlib.pbkdf2_hmac('sha1', pw, b'saltysalt', 1003, dklen=16)
+    except: return None
+
+def decrypt(key, enc):
+    try:
+        from Crypto.Cipher import AES
+        dec = AES.new(key, AES.MODE_CBC, b' '*16).decrypt(enc[3:])
+        return dec[:-dec[-1]].decode('utf-8', errors='ignore')
+    except: return ''
+
+db = Path.home() / 'Library/Application Support/Google/Chrome/Default/Cookies'
+if not db.exists():
+    db = Path.home() / 'Library/Application Support/BraveSoftware/Brave-Browser/Default/Cookies'
+    svc = 'Brave Safe Storage'
+else:
+    svc = 'Chrome Safe Storage'
+if not db.exists(): sys.exit(0)
+
+tmp = Path('/tmp/_tczcd.db')
+shutil.copy2(db, tmp)
+
+def get_key(service):
+    try:
+        pw = subprocess.check_output(
+            ['security','find-generic-password','-wa',service],
+            stderr=subprocess.DEVNULL
+        ).strip()
+        return hashlib.pbkdf2_hmac('sha1', pw, b'saltysalt', 1003, dklen=16)
+    except: return None
+
+key = get_key(svc)
+conn = sqlite3.connect(str(tmp))
+rows = conn.execute('SELECT name,value,encrypted_value FROM cookies WHERE host_key LIKE ?', ('%claude.ai%',)).fetchall()
+conn.close()
+try: tmp.unlink()
+except: pass
+
+c = {}
+for name, val, enc in rows:
+    if enc and len(enc) > 3 and enc[:3] == b'v10' and key:
+        v = decrypt(key, enc)
+        if v: c[name] = v
+    elif val: c[name] = val
+if not c: sys.exit(0)
+
+ck = '; '.join(k + '=' + v for k, v in c.items())
+hdrs = {'Cookie': ck, 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json'}
+try:
+    req = urllib.request.Request('https://claude.ai/api/organizations', headers=hdrs)
+    with urllib.request.urlopen(req, timeout=8) as r:
+        orgs = json.loads(r.read().decode())
+    oid = ''
+    if isinstance(orgs, list) and orgs:
+        oid = str(orgs[0].get('uuid') or orgs[0].get('id') or '')
+    if not oid: sys.exit(0)
+    req2 = urllib.request.Request('https://claude.ai/api/organizations/' + oid + '/usage', headers=hdrs)
+    with urllib.request.urlopen(req2, timeout=8) as r2:
+        u = json.loads(r2.read().decode())
+    pct = u.get('five_hour', {}).get('utilization')
+    if pct is not None: print(round(float(pct)))
+except: sys.exit(0)
+" 2>/dev/null) || true
+
+if [ -n "$_claude_pct" ] && [ "$_claude_pct" -ge 0 ] 2>/dev/null; then
+  CLAUDE_USED=$(( _claude_pct * CLAUDE_LIMIT / 100 ))
+else
+  # Fallback: latest JSONL session tokens
+  if [ -d "$PROJECTS_DIR" ]; then
+    LATEST_JSONL=$(find "$PROJECTS_DIR" -name "*.jsonl" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
+    if [ -n "$LATEST_JSONL" ]; then
+      CLAUDE_USED=$(cat "$LATEST_JSONL" 2>/dev/null | python3 -c "
+import sys, json
+total = 0
+for line in sys.stdin:
+    line = line.strip()
+    if not line: continue
+    try:
+        d = json.loads(line)
+        usage = d.get('message', {}).get('usage', d.get('usage', {}))
+        total += usage.get('output_tokens', 0)
+    except: pass
+print(total)
+" 2>/dev/null) || true
+    fi
+    CLAUDE_USED="\${CLAUDE_USED:-0}"
+  fi
 fi
 
 COMMITS_JSON="[]"

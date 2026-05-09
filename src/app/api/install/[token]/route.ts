@@ -65,6 +65,7 @@ echo "[tezcode] O'rnatish boshlanmoqda..."
 echo "${token}" > ~/.tezcode_token
 chmod 600 ~/.tezcode_token
 echo "${claudeLimit}" > ~/.tezcode_claude_limit
+pip3 install pycryptodome --quiet 2>/dev/null || true
 curl -fsSL "${server}/api/scripts/macos" -o ~/tezcode-monitor.sh
 chmod +x ~/tezcode-monitor.sh
 (crontab -l 2>/dev/null | grep -v tezcode-monitor; echo "*/15 * * * * bash ~/tezcode-monitor.sh >> ~/.tezcode_monitor.log 2>&1") | crontab -
