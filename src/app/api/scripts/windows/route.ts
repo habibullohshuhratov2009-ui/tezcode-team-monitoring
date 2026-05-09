@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server"
 
 export async function GET() {
-  // In production (standalone), scripts are copied to public folder
-  // Fallback to embedded script if file not found
-  const script = getScript()
-  return new NextResponse(script, {
+  return new NextResponse(getScript(), {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "Content-Disposition": "attachment; filename=tezcode-monitor.ps1",
@@ -44,27 +41,15 @@ if (-not $TOKEN) {
     exit 1
 }
 
-$claudeUsed = 0
-$weeklyOutputTokens = 0
+$claudeLimit = 88000
 $limitFile = "$env:USERPROFILE\\.tezcode_claude_limit"
-$claudeLimit = if (Test-Path $limitFile) { [int](Get-Content $limitFile -Raw).Trim() } else { 88000 }
+if (Test-Path $limitFile) { $claudeLimit = [int](Get-Content $limitFile -Raw).Trim() }
 $claudeWindow = "session"
 $projectsDir = "$env:USERPROFILE\\.claude\\projects"
+
+# Weekly tokens from JSONL (last 7 days)
+$weeklyOutputTokens = 0
 if (Test-Path $projectsDir) {
-    $latestFile = Get-ChildItem -Path $projectsDir -Recurse -Filter "*.jsonl" -ErrorAction SilentlyContinue |
-        Sort-Object LastWriteTime -Descending |
-        Select-Object -First 1
-    if ($latestFile) {
-        $lines = Get-Content $latestFile.FullName -Encoding utf8 -ErrorAction SilentlyContinue
-        foreach ($line in $lines) {
-            if (-not $line.Trim()) { continue }
-            try {
-                $obj = $line | ConvertFrom-Json -ErrorAction SilentlyContinue
-                $usage = if ($obj.message.usage) { $obj.message.usage } elseif ($obj.usage) { $obj.usage } else { $null }
-                if ($usage) { $claudeUsed += [int]($usage.output_tokens ?? 0) }
-            } catch {}
-        }
-    }
     $weeklyCutoff = (Get-Date).AddDays(-7)
     $weeklyFiles = Get-ChildItem -Path $projectsDir -Recurse -Filter "*.jsonl" -ErrorAction SilentlyContinue |
         Where-Object { $_.LastWriteTime -gt $weeklyCutoff }
@@ -77,6 +62,121 @@ if (Test-Path $projectsDir) {
                 $usage = if ($obj.message.usage) { $obj.message.usage } elseif ($obj.usage) { $obj.usage } else { $null }
                 if ($usage) { $weeklyOutputTokens += [int]($usage.output_tokens ?? 0) }
             } catch {}
+        }
+    }
+}
+
+# Real Claude.ai session % via Chrome cookies (Python + Windows DPAPI)
+$claudeApiPct = $null
+$pyScript = @'
+import sqlite3, shutil, json, sys, urllib.request, base64, os, ctypes, tempfile
+from ctypes import wintypes
+from pathlib import Path
+
+class _BLOB(ctypes.Structure):
+    _fields_ = [('cbData', wintypes.DWORD), ('pbData', ctypes.POINTER(ctypes.c_char))]
+
+def dpapi_decrypt(data):
+    buf = ctypes.create_string_buffer(data, len(data))
+    inp = _BLOB(ctypes.sizeof(buf), buf)
+    out = _BLOB()
+    ok = ctypes.windll.crypt32.CryptUnprotectData(ctypes.byref(inp), None, None, None, None, 0, ctypes.byref(out))
+    if not ok: return b''
+    res = ctypes.string_at(out.pbData, out.cbData)
+    ctypes.windll.kernel32.LocalFree(out.pbData)
+    return res
+
+def decrypt_cookie(key, enc):
+    try:
+        from Crypto.Cipher import AES
+        nonce = enc[3:15]
+        ct = enc[15:-16]
+        tag = enc[-16:]
+        return AES.new(key, AES.MODE_GCM, nonce=nonce).decrypt_and_verify(ct, tag).decode('utf-8', errors='ignore')
+    except: return ''
+
+appdata = os.environ.get('LOCALAPPDATA', '')
+if not appdata: sys.exit(0)
+
+state_path = Path(appdata) / 'Google/Chrome/User Data/Local State'
+if not state_path.exists():
+    state_path = Path(appdata) / 'BraveSoftware/Brave-Browser/User Data/Local State'
+if not state_path.exists(): sys.exit(0)
+
+state = json.loads(state_path.read_text(encoding='utf-8'))
+enc_key_b64 = state.get('os_crypt', {}).get('encrypted_key', '')
+if not enc_key_b64: sys.exit(0)
+
+key = dpapi_decrypt(base64.b64decode(enc_key_b64)[5:])
+if not key: sys.exit(0)
+
+cookies_db = Path(appdata) / 'Google/Chrome/User Data/Default/Cookies'
+if not cookies_db.exists():
+    cookies_db = Path(appdata) / 'BraveSoftware/Brave-Browser/User Data/Default/Cookies'
+if not cookies_db.exists(): sys.exit(0)
+
+tmp = Path(tempfile.gettempdir()) / '_tczcd.db'
+shutil.copy2(cookies_db, tmp)
+conn = sqlite3.connect(str(tmp))
+rows = conn.execute('SELECT name,value,encrypted_value FROM cookies WHERE host_key LIKE ?', ('%claude.ai%',)).fetchall()
+conn.close()
+try: tmp.unlink()
+except: pass
+
+c = {}
+for name, val, enc in rows:
+    if enc and len(enc) > 3 and enc[:3] == b'v10':
+        v = decrypt_cookie(key, enc)
+        if v: c[name] = v
+    elif val: c[name] = val
+if not c: sys.exit(0)
+
+ck = '; '.join(k + '=' + v for k, v in c.items())
+hdrs = {'Cookie': ck, 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json'}
+try:
+    req = urllib.request.Request('https://claude.ai/api/organizations', headers=hdrs)
+    with urllib.request.urlopen(req, timeout=8) as r:
+        orgs = json.loads(r.read().decode())
+    oid = ''
+    if isinstance(orgs, list) and orgs:
+        oid = str(orgs[0].get('uuid') or orgs[0].get('id') or '')
+    if not oid: sys.exit(0)
+    req2 = urllib.request.Request('https://claude.ai/api/organizations/' + oid + '/usage', headers=hdrs)
+    with urllib.request.urlopen(req2, timeout=8) as r2:
+        u = json.loads(r2.read().decode())
+    pct = u.get('five_hour', {}).get('utilization')
+    if pct is not None: print(round(float(pct)))
+except: sys.exit(0)
+'@
+$tmpPy = "$env:TEMP\\_tczpct.py"
+$pyScript | Out-File -FilePath $tmpPy -Encoding utf8
+foreach ($pyCmd in @('python3', 'python', 'py')) {
+    if (Get-Command $pyCmd -ErrorAction SilentlyContinue) {
+        try { $claudeApiPct = (& $pyCmd $tmpPy 2>$null) } catch {}
+        break
+    }
+}
+Remove-Item $tmpPy -ErrorAction SilentlyContinue
+
+$claudeUsed = 0
+if ($claudeApiPct -match '^\\d+$') {
+    $claudeUsed = [int][math]::Round([int]$claudeApiPct * $claudeLimit / 100)
+} else {
+    # Fallback: latest JSONL session tokens
+    if (Test-Path $projectsDir) {
+        $latestFile = Get-ChildItem -Path $projectsDir -Recurse -Filter "*.jsonl" -ErrorAction SilentlyContinue |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
+        if ($latestFile) {
+            $lines = Get-Content $latestFile.FullName -Encoding utf8 -ErrorAction SilentlyContinue
+            foreach ($line in $lines) {
+                if (-not $line.Trim()) { continue }
+                try {
+                    $obj = $line | ConvertFrom-Json -ErrorAction SilentlyContinue
+                    $usage = if ($obj.message.usage) { $obj.message.usage } elseif ($obj.usage) { $obj.usage } else { $null }
+                    if ($usage) { $claudeUsed += [int]($usage.output_tokens ?? 0) }
+                } catch {}
+            }
         }
     }
 }
@@ -102,13 +202,17 @@ foreach ($gitDir in $gitDirs) {
     }
 }
 
-$bootTime = (Get-Date) - (New-TimeSpan -Seconds (Get-CimInstance Win32_OperatingSystem).LastBootUpTime.Subtract([datetime]::MinValue).TotalSeconds)
+$bootTime = (Get-CimInstance Win32_OperatingSystem).LastBootUpTime
 $midnight = (Get-Date).Date
 $activeSince = if ($bootTime -gt $midnight) { $bootTime } else { $midnight }
 $workMinutes = [int]((Get-Date) - $activeSince).TotalMinutes
 $screenLocked = (Get-Process -Name "LogonUI" -ErrorAction SilentlyContinue) -ne $null
 
-$payload = [PSCustomObject]@{ claudeUsed=$claudeUsed; claudeLimit=$claudeLimit; claudeWindow=$claudeWindow; weeklyOutputTokens=$weeklyOutputTokens; workMinutes=$workMinutes; commits=$commits; screenOn=(-not $screenLocked) } | ConvertTo-Json -Depth 5 -Compress
+$payload = [PSCustomObject]@{
+    claudeUsed=$claudeUsed; claudeLimit=$claudeLimit; claudeWindow=$claudeWindow
+    weeklyOutputTokens=$weeklyOutputTokens; workMinutes=$workMinutes
+    commits=$commits; screenOn=(-not $screenLocked)
+} | ConvertTo-Json -Depth 5 -Compress
 
 try {
     Invoke-RestMethod -Uri "$SERVER/api/heartbeat" -Method POST -Headers @{ Authorization = "Bearer $TOKEN" } -ContentType "application/json; charset=utf-8" -Body ([System.Text.Encoding]::UTF8.GetBytes($payload)) | Out-Null

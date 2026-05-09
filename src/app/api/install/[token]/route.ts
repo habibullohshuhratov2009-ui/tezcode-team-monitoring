@@ -12,7 +12,7 @@ export async function GET(
   const url = new URL(req.url)
   const os = url.searchParams.get("os")
   const planParam = url.searchParams.get("plan") ?? "pro"
-  const claudeLimit = planParam === "max20x" ? 4000000 : planParam === "max5x" ? 1000000 : 200000
+  const claudeLimit = planParam === "max20x" ? 4000000 : planParam === "max5x" ? 1000000 : 88000
 
   const hash = crypto.createHash("sha256").update(token).digest("hex")
   const [row] = await db
@@ -35,17 +35,24 @@ export async function GET(
 
 Write-Host ""
 Write-Host "[tezcode] Claude planingiz qaysi?"
-Write-Host "  1) Pro     — 200K token"
+Write-Host "  1) Pro     — 88K token"
 Write-Host "  2) Max 5x  — 1M token"
 Write-Host "  3) Max 20x — 4M token"
 $choice = Read-Host "Tanlang (1/2/3)"
 $limit = switch ($choice) {
   "2" { 1000000 }
   "3" { 4000000 }
-  default { 200000 }
+  default { 88000 }
 }
 $limit | Out-File "$env:USERPROFILE\\.tezcode_claude_limit" -Encoding utf8
 Write-Host "[tezcode] Limit saqlandi: $limit token"
+
+foreach ($pyCmd in @('python3', 'python', 'py')) {
+    if (Get-Command $pyCmd -ErrorAction SilentlyContinue) {
+        & $pyCmd -m pip install pycryptodome -q 2>$null
+        break
+    }
+}
 
 $scriptPath = "$env:USERPROFILE\\tezcode-monitor.ps1"
 Invoke-WebRequest -Uri "${server}/api/scripts/windows" -OutFile $scriptPath
