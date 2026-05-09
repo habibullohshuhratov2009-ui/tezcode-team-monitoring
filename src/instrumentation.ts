@@ -6,6 +6,10 @@ export async function register() {
       ALTER TABLE team_heartbeats
       ADD COLUMN IF NOT EXISTS weekly_output_tokens integer
     `).catch(() => {})
+    await db.execute(sql`
+      ALTER TABLE team_heartbeats
+      ADD COLUMN IF NOT EXISTS weekly_percent integer
+    `).catch(() => {})
 
     const { startCron } = await import("./lib/cron")
     startCron()

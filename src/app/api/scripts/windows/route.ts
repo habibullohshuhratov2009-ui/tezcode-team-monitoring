@@ -145,22 +145,32 @@ try:
     with urllib.request.urlopen(req2, timeout=8) as r2:
         u = json.loads(r2.read().decode())
     pct = u.get('five_hour', {}).get('utilization')
-    if pct is not None: print(round(float(pct)))
+    pct5 = u.get('five_hour', {}).get('utilization')
+    pct7 = u.get('seven_day', {}).get('utilization')
+    out = []
+    if pct5 is not None: out.append(str(round(float(pct5))))
+    if pct7 is not None: out.append(str(round(float(pct7))))
+    if out: print(' '.join(out))
 except: sys.exit(0)
 '@
 $tmpPy = "$env:TEMP\\_tczpct.py"
 $pyScript | Out-File -FilePath $tmpPy -Encoding utf8
+$apiOut = $null
 foreach ($pyCmd in @('python3', 'python', 'py')) {
     if (Get-Command $pyCmd -ErrorAction SilentlyContinue) {
-        try { $claudeApiPct = (& $pyCmd $tmpPy 2>$null) } catch {}
+        try { $apiOut = (& $pyCmd $tmpPy 2>$null) } catch {}
         break
     }
 }
 Remove-Item $tmpPy -ErrorAction SilentlyContinue
 
 $claudeUsed = 0
-if ($claudeApiPct -match '^\\d+$') {
-    $claudeUsed = [int][math]::Round([int]$claudeApiPct * $claudeLimit / 100)
+$weeklyPercent = $null
+if ($apiOut -match '^(\\d+)(?:\\s+(\\d+))?$') {
+    $claudeUsed = [int][math]::Round([int]$Matches[1] * $claudeLimit / 100)
+    if ($Matches[2]) { $weeklyPercent = [int]$Matches[2] }
+} elseif ($apiOut -match '^\\d+$') {
+    $claudeUsed = [int][math]::Round([int]$apiOut * $claudeLimit / 100)
 } else {
     # Fallback: latest JSONL session tokens
     if (Test-Path $projectsDir) {
@@ -210,8 +220,8 @@ $screenLocked = (Get-Process -Name "LogonUI" -ErrorAction SilentlyContinue) -ne 
 
 $payload = [PSCustomObject]@{
     claudeUsed=$claudeUsed; claudeLimit=$claudeLimit; claudeWindow=$claudeWindow
-    weeklyOutputTokens=$weeklyOutputTokens; workMinutes=$workMinutes
-    commits=$commits; screenOn=(-not $screenLocked)
+    weeklyOutputTokens=$weeklyOutputTokens; weeklyPercent=$weeklyPercent
+    workMinutes=$workMinutes; commits=$commits; screenOn=(-not $screenLocked)
 } | ConvertTo-Json -Depth 5 -Compress
 
 try {

@@ -24,6 +24,7 @@ type DevStats = {
     percent: number | null
     window: string | null
     weeklyTokens: number | null
+    weeklyPercent: number | null
   }
   commits: Commit[]
 }
@@ -144,16 +145,26 @@ function DevView({ dev }: { dev: DevStats }) {
         {/* Weekly tokens */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 text-center">
           <p className="text-gray-500 text-xs mb-1">Haftalik token</p>
-          <p className="text-3xl font-bold text-blue-400">
-            {dev.claude.weeklyTokens !== null
-              ? `${(dev.claude.weeklyTokens / 1000).toFixed(0)}K`
-              : "—"}
-          </p>
-          <p className="text-gray-600 text-xs mt-1">
-            {dev.claude.weeklyTokens !== null
-              ? `${dev.claude.weeklyTokens.toLocaleString()} output token`
-              : "Hali ma'lumot yo'q"}
-          </p>
+          {dev.claude.weeklyPercent !== null ? (
+            <>
+              <p className="text-3xl font-bold text-blue-400">{dev.claude.weeklyPercent}%</p>
+              <p className="text-gray-600 text-xs mt-1">7 kunlik foydalanish</p>
+            </>
+          ) : dev.claude.weeklyTokens !== null ? (
+            <>
+              <p className="text-3xl font-bold text-blue-400">
+                {(dev.claude.weeklyTokens / 1000).toFixed(0)}K
+              </p>
+              <p className="text-gray-600 text-xs mt-1">
+                {dev.claude.weeklyTokens.toLocaleString()} output token
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-3xl font-bold text-blue-400">—</p>
+              <p className="text-gray-600 text-xs mt-1">Hali ma'lumot yo'q</p>
+            </>
+          )}
         </div>
       </div>
 

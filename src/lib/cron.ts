@@ -47,7 +47,9 @@ async function sendSummary() {
             ? Math.round((latest.claudeUsed / latest.claudeLimit) * 100)
             : null
 
-        const weeklyK = latest?.weeklyOutputTokens
+        const weeklyDisp = latest?.weeklyPercent !== null && latest?.weeklyPercent !== undefined
+          ? `${latest.weeklyPercent}%`
+          : latest?.weeklyOutputTokens
           ? `${Math.round(latest.weeklyOutputTokens / 1000)}K`
           : null
 
@@ -55,7 +57,7 @@ async function sendSummary() {
           ? `${Math.round(latest.workMinutes / 60)}h`
           : "—"
 
-        return { dev, isActive, percent, weeklyK, commitCount: commits.length, workH }
+        return { dev, isActive, percent, weeklyDisp, commitCount: commits.length, workH }
       })
     )
 
@@ -72,12 +74,12 @@ async function sendSummary() {
     msg += `━━━━━━━━━━━━━━━━━\n`
     msg += `👥 Aktiv dasturchilar: <b>${activeCount} / ${devList.length}</b>\n\n`
 
-    for (const { dev, isActive, percent, weeklyK, commitCount, workH } of stats) {
+    for (const { dev, isActive, percent, weeklyDisp, commitCount, workH } of stats) {
       const tokenStr = percent !== null ? `${percent}%` : "—"
       const dot = !isActive ? "⚫" : (percent ?? 0) >= 80 ? "🔴" : (percent ?? 0) >= 50 ? "🟡" : "🟢"
       const statusStr = isActive ? `${workH} ishladi` : "oflayn"
       const tokenBold = (percent ?? 0) >= 80 ? `<b>${tokenStr}</b>` : tokenStr
-      const weeklyStr = weeklyK ? ` | hafta: ${weeklyK}` : ""
+      const weeklyStr = weeklyDisp ? ` | hafta: ${weeklyDisp}` : ""
       msg += `${dot} <b>${dev.name}</b> — ${statusStr} | ${tokenBold}${weeklyStr} | ${commitCount} commit\n`
     }
 

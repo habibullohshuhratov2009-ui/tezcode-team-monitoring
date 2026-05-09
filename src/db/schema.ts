@@ -50,6 +50,7 @@ export const teamHeartbeats = pgTable("team_heartbeats", {
   claudeWindow:        text("claude_window"),
   workMinutes:         integer("work_minutes"),
   weeklyOutputTokens:  integer("weekly_output_tokens"),
+  weeklyPercent:       integer("weekly_percent"),
 }, (t) => [
   index("idx_hb_dev_ts").on(t.devId, t.ts),
   index("idx_hb_ts").on(t.ts),

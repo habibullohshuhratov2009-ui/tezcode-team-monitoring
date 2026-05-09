@@ -55,6 +55,7 @@ async function getDevStats(devId: string) {
       percent,
       window: latest?.claudeWindow ?? null,
       weeklyTokens: latest?.weeklyOutputTokens ?? null,
+      weeklyPercent: latest?.weeklyPercent ?? null,
     },
     workMinutes: latest?.workMinutes ?? null,
     commits: recentCommits.map((c): Commit => ({

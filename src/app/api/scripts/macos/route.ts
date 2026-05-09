@@ -113,10 +113,19 @@ try:
     req2 = urllib.request.Request('https://claude.ai/api/organizations/' + oid + '/usage', headers=hdrs)
     with urllib.request.urlopen(req2, timeout=8) as r2:
         u = json.loads(r2.read().decode())
-    pct = u.get('five_hour', {}).get('utilization')
-    if pct is not None: print(round(float(pct)))
+    pct5 = u.get('five_hour', {}).get('utilization')
+    pct7 = u.get('seven_day', {}).get('utilization')
+    out = []
+    if pct5 is not None: out.append(str(round(float(pct5))))
+    if pct7 is not None: out.append(str(round(float(pct7))))
+    if out: print(' '.join(out))
 except: sys.exit(0)
 " 2>/dev/null) || true
+
+_api_out="$_claude_pct"
+_claude_pct=$(echo "$_api_out" | awk '{print $1}')
+_weekly_pct=$(echo "$_api_out" | awk '{print $2}')
+WEEKLY_PERCENT="\${_weekly_pct:-0}"
 
 if [ -n "$_claude_pct" ] && [ "$_claude_pct" -ge 0 ] 2>/dev/null; then
   CLAUDE_USED=$(( _claude_pct * CLAUDE_LIMIT / 100 ))
@@ -191,11 +200,11 @@ WORK_MINUTES=$(( (NOW - ACTIVE_SINCE) / 60 ))
 
 PAYLOAD=$(python3 -c "
 import json
-print(json.dumps({'claudeUsed':$CLAUDE_USED,'claudeLimit':$CLAUDE_LIMIT,'claudeWindow':'$CLAUDE_WINDOW','weeklyOutputTokens':$WEEKLY_OUTPUT_TOKENS,'workMinutes':$WORK_MINUTES,'commits':$COMMITS_JSON,'screenOn':$SCREEN_ON}))
+print(json.dumps({'claudeUsed':$CLAUDE_USED,'claudeLimit':$CLAUDE_LIMIT,'claudeWindow':'$CLAUDE_WINDOW','weeklyOutputTokens':$WEEKLY_OUTPUT_TOKENS,'weeklyPercent':$WEEKLY_PERCENT,'workMinutes':$WORK_MINUTES,'commits':$COMMITS_JSON,'screenOn':$SCREEN_ON}))
 " 2>/dev/null) || true
 
 if [ -z "$PAYLOAD" ]; then
-  PAYLOAD="{\\"claudeUsed\\":$CLAUDE_USED,\\"claudeLimit\\":$CLAUDE_LIMIT,\\"claudeWindow\\":\\"$CLAUDE_WINDOW\\",\\"weeklyOutputTokens\\":$WEEKLY_OUTPUT_TOKENS,\\"workMinutes\\":$WORK_MINUTES,\\"commits\\":[]}"
+  PAYLOAD="{\\"claudeUsed\\":$CLAUDE_USED,\\"claudeLimit\\":$CLAUDE_LIMIT,\\"claudeWindow\\":\\"$CLAUDE_WINDOW\\",\\"weeklyOutputTokens\\":$WEEKLY_OUTPUT_TOKENS,\\"weeklyPercent\\":$WEEKLY_PERCENT,\\"workMinutes\\":$WORK_MINUTES,\\"commits\\":[]}"
 fi
 
 HTTP_STATUS=$(curl -s -w "%{http_code}" -o /tmp/tezcode_resp.txt -X POST "$SERVER/api/heartbeat" \
