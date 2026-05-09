@@ -22,10 +22,28 @@ CLAUDE_LIMIT=$(cat "$HOME/.tezcode_claude_limit" 2>/dev/null | tr -d '[:space:]'
 CLAUDE_LIMIT="\${CLAUDE_LIMIT:-88000}"
 CLAUDE_WINDOW="session"
 PROJECTS_DIR="$HOME/.claude/projects"
-
 WEEKLY_OUTPUT_TOKENS=0
 
-if [ -d "$PROJECTS_DIR" ]; then
+# ── Playwright orqali Claude.ai dan real usage olishga urinish ───────
+PW_SCRIPT="$HOME/.tezcode_claude_usage.py"
+PW_RESULT=""
+if [ -f "$PW_SCRIPT" ] && command -v python3 >/dev/null 2>&1; then
+  PW_RESULT=$(python3 "$PW_SCRIPT" 2>/dev/null) || true
+  if [ -n "$PW_RESULT" ]; then
+    _PW_SESSION=$(echo "$PW_RESULT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('sessionPercent') or '')" 2>/dev/null) || true
+    _PW_WEEKLY=$(echo "$PW_RESULT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('weeklyTokens') or '')" 2>/dev/null) || true
+    if [ -n "$_PW_SESSION" ]; then
+      CLAUDE_USED=$(python3 -c "print(round($_PW_SESSION * $CLAUDE_LIMIT / 100))" 2>/dev/null) || true
+      CLAUDE_WINDOW="playwright"
+    fi
+    if [ -n "$_PW_WEEKLY" ]; then
+      WEEKLY_OUTPUT_TOKENS="$_PW_WEEKLY"
+    fi
+  fi
+fi
+
+# ── JSONL fallback (Playwright ishlamasa) ────────────────────────────
+if [ "$CLAUDE_WINDOW" != "playwright" ] && [ -d "$PROJECTS_DIR" ]; then
   LATEST_JSONL=$(find "$PROJECTS_DIR" -name "*.jsonl" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
   if [ -n "$LATEST_JSONL" ]; then
     CLAUDE_USED=$(cat "$LATEST_JSONL" 2>/dev/null | python3 -c "
