@@ -61,10 +61,9 @@ if (Test-Path $projectsDir) {
                 $obj = $line | ConvertFrom-Json -ErrorAction SilentlyContinue
                 $usage = if ($obj.message.usage) { $obj.message.usage } elseif ($obj.usage) { $obj.usage } else { $null }
                 if ($usage) {
-                    $claudeUsed += [int]($usage.input_tokens ?? 0)
                     $claudeUsed += [int]($usage.output_tokens ?? 0)
+                    $claudeUsed += [int]($usage.input_tokens ?? 0)
                     $claudeUsed += [int]($usage.cache_creation_input_tokens ?? 0)
-                    $claudeUsed += [int]($usage.cache_read_input_tokens ?? 0)
                 }
             } catch {}
         }

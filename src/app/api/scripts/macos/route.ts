@@ -35,10 +35,9 @@ for line in sys.stdin:
     try:
         d = json.loads(line)
         usage = d.get('message', {}).get('usage', d.get('usage', {}))
-        total += (usage.get('input_tokens', 0)
-                + usage.get('output_tokens', 0)
-                + usage.get('cache_creation_input_tokens', 0)
-                + usage.get('cache_read_input_tokens', 0))
+        total += (usage.get('output_tokens', 0)
+                + usage.get('input_tokens', 0)
+                + usage.get('cache_creation_input_tokens', 0))
     except: pass
 print(total)
 " 2>/dev/null) || true
