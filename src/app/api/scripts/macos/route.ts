@@ -19,14 +19,14 @@ fi
 
 CLAUDE_USED=0
 CLAUDE_LIMIT=$(cat "$HOME/.tezcode_claude_limit" 2>/dev/null | tr -d '[:space:]')
-CLAUDE_LIMIT="\${CLAUDE_LIMIT:-200000}"
-CLAUDE_WINDOW="session"
+CLAUDE_LIMIT="\${CLAUDE_LIMIT:-88000}"
+CLAUDE_WINDOW="5h"
 PROJECTS_DIR="$HOME/.claude/projects"
 
 if [ -d "$PROJECTS_DIR" ]; then
-  LATEST_JSONL=$(find "$PROJECTS_DIR" -name "*.jsonl" 2>/dev/null | xargs ls -t 2>/dev/null | head -1)
-  if [ -n "$LATEST_JSONL" ]; then
-    CLAUDE_USED=$(cat "$LATEST_JSONL" 2>/dev/null | python3 -c "
+  CLAUDE_USED=$(find "$PROJECTS_DIR" -name "*.jsonl" -mmin -300 2>/dev/null \
+    -exec cat {} + 2>/dev/null \
+    | python3 -c "
 import sys, json
 total = 0
 for line in sys.stdin:
@@ -35,13 +35,10 @@ for line in sys.stdin:
     try:
         d = json.loads(line)
         usage = d.get('message', {}).get('usage', d.get('usage', {}))
-        total += (usage.get('output_tokens', 0)
-                + usage.get('input_tokens', 0)
-                + usage.get('cache_creation_input_tokens', 0))
+        total += usage.get('output_tokens', 0)
     except: pass
 print(total)
 " 2>/dev/null) || true
-  fi
   CLAUDE_USED="\${CLAUDE_USED:-0}"
 fi
 

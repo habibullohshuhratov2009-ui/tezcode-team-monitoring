@@ -21,7 +21,7 @@ export const developers = pgTable("developers", {
   name:        text("name").notNull(),
   email:       text("email"),
   status:      text("status").notNull().default("active"),
-  claudeLimit: integer("claude_limit").notNull().default(200000),
+  claudeLimit: integer("claude_limit").notNull().default(88000),
   createdAt:   timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   check("status_check", sql`${t.status} IN ('active','paused','off-boarded')`),

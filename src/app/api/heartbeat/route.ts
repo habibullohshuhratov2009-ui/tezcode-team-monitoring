@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json().catch(() => ({}))
-  const { claudeUsed, claudeWindow, workMinutes, commits } = body
+  const { claudeUsed, claudeLimit: scriptLimit, claudeWindow, workMinutes, commits } = body
 
   const [dev] = await db
     .select()
@@ -41,7 +41,8 @@ export async function POST(req: Request) {
     .where(eq(developers.id, token.devId))
     .limit(1)
 
-  const claudeLimit = dev?.claudeLimit ?? 200000
+  // DB limit takes priority; fall back to script-reported limit, then Pro default
+  const claudeLimit = dev?.claudeLimit ?? scriptLimit ?? 88000
 
   await Promise.all([
     db.insert(teamHeartbeats).values({
